@@ -38,10 +38,8 @@ glapi_sources =					\
 	dispatch.h				\
 	glapitable.h				\
 	glapitemp.h				\
-	glapi.c					\
 	glapi.h					\
 	glapioffsets.h				\
-	glthread.c				\
 	glthread.h				\
 	glprocs.h
 

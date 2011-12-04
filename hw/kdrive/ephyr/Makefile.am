@@ -27,6 +27,7 @@ libxephyr_hostxv_a_INCLUDES = @XEPHYR_INCS@
 
 if XV
 libxephyr_hostxv_a_SOURCES=				\
+	ephyrvideo.c \
 	ephyrhostvideo.c \
 	ephyrhostvideo.h
 endif
@@ -54,7 +55,6 @@ endif
 libxephyr_a_SOURCES =	\
 	ephyr.c		\
 	ephyr_draw.c	\
-	ephyrvideo.c	\
 	os.c		\
 	hostx.h         \
 	ephyr.h		\

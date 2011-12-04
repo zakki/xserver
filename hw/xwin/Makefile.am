@@ -34,6 +34,7 @@ SRCS_MULTIWINDOWEXTWM = \
 	winwin32rootlesswndproc.c \
 	winwindowswm.c
 DEFS_MULTIWINDOWEXTWM = -DXWIN_MULTIWINDOWEXTWM
+MULTIWINDOWEXTWM_LIBS = $(top_builddir)/miext/rootless/librootless.la
 endif
 
 if XWIN_NATIVEGDI
@@ -120,8 +121,11 @@ SRCS =	InitInput.c \
 	winpriv.h \
 	winresource.h \
 	winwindow.h \
+	XWin.rc \
+	$(top_srcdir)/Xext/dpmsstubs.c \
+	$(top_srcdir)/Xi/stubs.c \
 	$(top_srcdir)/mi/miinitext.c \
-	$(top_srcdir)/fb/fbcmap.c \
+	$(top_srcdir)/fb/fbcmap_mi.c \
 	$(SRCS_CLIPBOARD) \
 	$(SRCS_GLX_WINDOWS) \
 	$(SRCS_MULTIWINDOW) \
@@ -142,17 +146,14 @@ SRCS =	InitInput.c \
 
 XWin_SOURCES = $(SRCS)
 
-INCLUDES = -I$(top_srcdir)/miext/rootless \
-           -I$(top_srcdir)/miext/rootless/safeAlpha
-
-XWIN_LIBS = \
-	$(top_builddir)/fb/libfb.la \
-	$(XSERVER_LIBS)
+INCLUDES = -I$(top_srcdir)/miext/rootless
 
 XWin_DEPENDENCIES = $(XWIN_LIBS)
-XWin_LDADD = $(XWIN_LIBS) $(XSERVER_SYS_LIBS) $(XWIN_SYS_LIBS)
+XWin_LDADD = $(MULTIWINDOWEXTWM_LIBS) $(XWIN_LIBS) $(XSERVER_LIBS) $(XSERVER_SYS_LIBS) $(XWIN_SYS_LIBS)
+XWin_LDFLAGS = -mwindows
 
-XWin_LDFLAGS = -mwindows -static
+.rc.o:
+	$(WINDRES) --use-temp-file -i $< --input-format=rc -o $@ -O coff -I $(top_builddir)/include -DPROJECT_NAME=\"$(VENDOR_NAME_SHORT)\" -DPROJECT_VERSION=\"$(PACKAGE_VERSION)\" -DBUILD_DATE=\"$(BUILD_DATE)\"
 
 winprefsyacc.h: winprefsyacc.c
 winprefslex.c: winprefslex.l winprefsyacc.c winprefsyacc.h
@@ -163,9 +164,12 @@ CLEANFILES = $(BUILT_SOURCES)
 AM_YFLAGS = -d
 AM_LFLAGS = -i
 AM_CFLAGS = -DHAVE_XWIN_CONFIG_H $(DIX_CFLAGS) \
-            $(XWINMODULES_CFLAGS)
+            $(XWINMODULES_CFLAGS) \
+            -DBUILD_DATE=$(BUILD_DATE) \
+            -DXFree86Server
 
-dist_man1_MANS = XWin.man XWinrc.man
+dist_man1_MANS = XWin.man
+dist_man5_MANS = XWinrc.man
 
 EXTRA_DIST = \
 	_usr_X11R6_lib_X11_system.XWinrc \
@@ -194,4 +198,4 @@ EXTRA_DIST = \
 	xlaunch/window/wizard.h
 
 relink:
-	rm -f XWin && $(MAKE) XWin
+	rm -f XWin$(EXEEXT) && $(MAKE) XWin$(EXEEXT)

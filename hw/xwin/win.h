@@ -103,6 +103,7 @@
 #define WIN_E3B_TIMER_ID		1
 #define WIN_POLLING_MOUSE_TIMER_ID	2
 
+#define MOUSE_POLLING_INTERVAL		50
 
 #define WIN_E3B_OFF		-1
 #define WIN_FD_INVALID		-1
@@ -314,6 +315,7 @@ typedef Bool (*winReleasePrimarySurfaceProcPtr)(ScreenPtr);
 
 typedef Bool (*winFinishCreateWindowsWindowProcPtr)(WindowPtr pWin);
 
+typedef Bool (*winCreateScreenResourcesProc)(ScreenPtr);
 
 /* Typedef for DIX wrapper functions */
 typedef int (*winDispatchProcPtr) (ClientPtr);
@@ -563,6 +565,8 @@ typedef struct _winPrivScreenRec
   winHotKeyAltTabProcPtr		pwinHotKeyAltTab;
   winCreatePrimarySurfaceProcPtr	pwinCreatePrimarySurface;
   winReleasePrimarySurfaceProcPtr	pwinReleasePrimarySurface;
+
+  winCreateScreenResourcesProc       pwinCreateScreenResources;
 
 #ifdef XWIN_MULTIWINDOW
   /* Window Procedures for MultiWindow mode */
@@ -1005,6 +1009,9 @@ int
 winMouseButtonsHandle (ScreenPtr pScreen,
 		       int iEventType, int iButton,
 		       WPARAM wParam);
+
+void
+winEnqueueMotion(int x, int y);
 
 #ifdef XWIN_NATIVEGDI
 /*

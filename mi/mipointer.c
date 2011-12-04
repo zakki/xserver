@@ -260,7 +260,14 @@ miPointerWarpCursor (pScreen, x, y)
 	miPointer.pScreen = pScreen;
     }
 
-    if (changedScreen)
+    /* Don't call USFS if we use Xinerama, otherwise the root window is
+     * updated to the second screen, and we never receive any events.
+     * (FDO bug #18668) */
+    if (changedScreen
+#ifdef PANORAMIX
+            && noPanoramiXExtension
+#endif
+       )
         UpdateSpriteForScreen (pScreen) ;
 }
 

@@ -36,7 +36,7 @@
 #endif
 #include "win.h"
 
-#if defined(XFree86Server) && defined(XINPUT)
+#ifdef XINPUT
 #include "inputstr.h"
 
 /* Peek the internal button mapping */
@@ -106,7 +106,7 @@ winMouseProc (DeviceIntPtr pDeviceInt, int iState)
 			       2);
       free(map);
 
-#if defined(XFree86Server) && defined(XINPUT)
+#ifdef XINPUT
       g_winMouseButtonMap = pDeviceInt->button->map;
 #endif
       break;
@@ -116,7 +116,7 @@ winMouseProc (DeviceIntPtr pDeviceInt, int iState)
       break;
 
     case DEVICE_CLOSE:
-#if defined(XFree86Server) && defined(XINPUT)
+#ifdef XINPUT
       g_winMouseButtonMap = NULL;
 #endif
     case DEVICE_OFF:
@@ -225,7 +225,7 @@ winMouseButtonsSendEvent (int iEventType, int iButton)
 
   /* Load an xEvent and enqueue the event */
   xCurrentEvent.u.u.type = iEventType;
-#if defined(XFree86Server) && defined(XINPUT)
+#ifdef XINPUT
   if (g_winMouseButtonMap)
     xCurrentEvent.u.u.detail = g_winMouseButtonMap[iButton];
   else
@@ -233,7 +233,17 @@ winMouseButtonsSendEvent (int iEventType, int iButton)
   xCurrentEvent.u.u.detail = iButton;
   xCurrentEvent.u.keyButtonPointer.time
     = g_c32LastInputEventTime = GetTickCount ();
-  mieqEnqueue (&xCurrentEvent);
+
+#if CYGDEBUG
+  ErrorF("winMouseButtonsSendEvent: xCurrentEvent.u.u.type: %d, xCurrentEvent.u.u.detail: %d\n",
+          xCurrentEvent.u.u.type, xCurrentEvent.u.u.detail);
+#endif
+  DeviceIntPtr pDev;
+  for (pDev = inputInfo.devices; pDev; pDev = pDev->next)
+    if ((pDev->coreEvents && pDev != inputInfo.pointer) && pDev->button)
+      {
+	mieqEnqueue (pDev, &xCurrentEvent);
+      }
 }
 
 
@@ -339,3 +349,25 @@ winMouseButtonsHandle (ScreenPtr pScreen,
 
   return 0;
 }
+
+/**
+ * Enqueue a motion event.
+ */
+void winEnqueueMotion(int x, int y)
+{
+  int i, nevents;
+  int valuators[2];
+
+  xEvent *events = (xEvent *)malloc(sizeof(xEvent) * GetMaximumEventsNum());
+
+  valuators[0] = x;
+  valuators[1] = y;
+  nevents = GetPointerEvents(events, inputInfo.pointer, MotionNotify, 0,
+			     POINTER_ABSOLUTE, 0, 2, valuators);
+
+  for (i = 0; i < nevents; i++)
+    mieqEnqueue(inputInfo.pointer, events + i);
+
+  xfree(events);
+}
+// XXX: miPointerMove does exactly this, but is static :-( (and uses a static buffer)
