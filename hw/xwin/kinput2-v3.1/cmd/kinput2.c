@@ -291,7 +291,7 @@ FlushThread (XtPointer client_data)
 #endif
 
 int
-initKinput2()
+initKinput2(const char *display)
 {
     Widget manager, protocol;
     int i;
@@ -305,7 +305,6 @@ initKinput2()
     Display *pDisplay;
 //    struct _XDisplay *pDisplay;
     int iRetries = 0;
-    extern char *display;
     char* pszDisplay;
     static unsigned long s_ulServerGeneration = 0;
 

@@ -80,13 +80,14 @@ typedef int (*winDispatchProcPtr) (ClientPtr);
 #define CYGIME_DEBUG TRUE
 
 /* external symbols */ 
-extern int initKinput2(void);
+extern int initKinput2(const char *display);
 extern void winWinIMESendEvent (int type, unsigned int mask, int kind, int arg, int context, HWND hwnd);
 extern pthread_t	g_ptImServerProc;
 extern Bool		g_fIME;
 extern CARD32		g_c32LastInputEventTime;
 extern DWORD		g_TriggerKeycode;
 extern long		g_TriggerModifier;
+extern char *display;
 
 /*
  *
@@ -118,7 +119,7 @@ DWORD WINAPI
 ki2ServerProc(LPVOID lpParameter)
 {
 ErrorF("ki2ServerProc() start.\n");
-    initKinput2();
+    initKinput2(display);
 ErrorF("ki2ServerProc() exit.\n");
     ExitThread(0);
 }
@@ -127,7 +128,7 @@ static void
 ki2ServerProc (void *pvNotUsed)
 {
 ErrorF("ki2ServerProc() start.\n");
-    initKinput2();
+    initKinput2(display);
 ErrorF("ki2ServerProc() exit.\n");
     pthread_exit (NULL);
 }

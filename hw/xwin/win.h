@@ -1526,7 +1526,7 @@ Bool XWinIMESetCandidateWindow (void *dpy, int context, int x, int y, int listnu
  * kinput2.c
  */
 int
-initKinput2(void);
+initKinput2(const char *display);
 
 void
 regImeProcessKeyList(CARD32 time, unsigned int keycode);
