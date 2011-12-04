@@ -42,6 +42,7 @@
 extern HWND			g_hDlgDepthChange;
 extern HWND			g_hDlgExit;
 extern HWND			g_hDlgAbout;
+extern Bool			g_fIME;
 
 
 /* See Porting Layer Definition - p. 6 */
@@ -100,7 +101,7 @@ winBlockHandler_ProcessMessages:
 	  && (g_hDlgAbout == 0
 	      || !IsDialogMessage (g_hDlgAbout, &msg)))
 	{
-	  DispatchMessage (&msg);
+	  winProcessMessage(&msg);
 	}
     }
 }

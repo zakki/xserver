@@ -1,0 +1,18 @@
+#include "../Kinput2.conf"
+
+      CCDEF_FILES = ccdef.kinput2 rule.eggfunc rule.func \
+		    rule.kana rule.kana2 rule.roma rule.wnnroma rule.zascii \
+		    rule.greek \
+		    ccdef.kinput2.egg rule.hiragana.egg \
+		    rule.katakana.egg rule.kigou.egg
+
+all::
+depend::
+clean::
+
+#ifdef UseWnn
+MakeDirectories(install,$(CCDEF_DIR))
+InstallMultiple($(CCDEF_FILES),$(CCDEF_DIR))
+#else
+install::
+#endif

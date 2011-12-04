@@ -213,7 +213,22 @@
 #include "winwindow.h"
 #include "winmsg.h"
 
+#ifdef XWIN_WINIME
+#include "winimedefs.h"
 
+#define WM_IME_REQUEST 0x0288
+#define IMR_QUERYCHARPOSITION 0x0006
+
+/*
+typedef struct tagIMECHARPOSITION {
+	DWORD dwSize;
+	DWORD dwCharPos;
+	POINT pt;
+	UINT cLineHeight;
+	RECT rcDocument;
+} IMECHARPOSITION,*PIMECHARPOSITION;
+*/
+#endif
 /*
  * Debugging macros
  */
@@ -958,6 +973,10 @@ winKeybdReleaseKeys (void);
 void
 winSendKeyEvent (DWORD dwKey, Bool fDown);
 
+#ifdef XWIN_WINIME
+void
+winSendImeKeyEvent (DWORD dwKey, Bool fDown);
+#endif
 
 /*
  * winkeyhook.c
@@ -1321,6 +1340,9 @@ LRESULT CALLBACK
 winWindowProc (HWND hWnd, UINT message, 
 	       WPARAM wParam, LPARAM lParam);
 
+void
+winProcessMessage (LPMSG lpMsg);
+
 
 #ifdef XWIN_MULTIWINDOWEXTWM
 /*
@@ -1451,6 +1473,64 @@ winWindowsWMExtensionInit (void);
 
 Bool
 winInitCursor (ScreenPtr pScreen);
+
+#ifdef XWIN_WINIME
+/*
+ * winime.c
+ */
+
+void
+winWinIMEExtensionInit (void);
+
+void
+winWinIMESendEvent (int type, unsigned int mask, int kind, int arg, int context, HWND hwnd);
+
+int
+winHIMCtoContext (DWORD hIMC);
+
+void
+winCommitCompositionResult (int nContext, int nIndex, void *pData, int nLen);
+
+Bool
+winHIMCCompositionDraw(DWORD hIMC);
+
+LRESULT
+winIMEMessageHandler (HWND hwnd, UINT message,
+		      WPARAM wParam, LPARAM lParam);
+
+int
+winimeSendDummyEvent(void);
+
+int
+winimeImeOff(void);
+
+void
+freeProcessKeyLists(void);
+
+/*
+ * winimserver.c
+ */
+#ifndef USE_XWIN_FULLEXTENSION
+int XWinIMEGetCompositionString (void *dpy, int context, int index, int count, wchar_t* str_return);
+Bool XWinIMEGetCursorPosition (void* dpy, int context, int *cursor, int *numClause, int *curClause, int *offset);
+Bool XWinIMEGetConversionStatus (void *dpy, int context, Bool* fopen, DWORD* conversion, DWORD* sentence, Bool* fmodify);
+int XWinIMEGetTargetClause (void *dpy, int context, int target, wchar_t *data, int *attr);
+int XWinIMEGetTargetString (void *dpy, int context, int target, int offset, wchar_t *data);
+Bool XWinIMESetCandidateWindow (void *dpy, int context, int x, int y, int listnum);
+#endif
+
+///Bool
+///winInitImServer ();
+
+/*
+ * kinput2.c
+ */
+int
+initKinput2(void);
+
+void
+regImeProcessKeyList(CARD32 time, unsigned int keycode);
+#endif
 
 /*
  * END DDX and DIX Function Prototypes

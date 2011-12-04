@@ -535,10 +535,19 @@ KeySym *	sym = XkbKeySymsPtr(xkbi->desc,key);
 	    if (BitIsOn(keybd->kbdfeed->ctrl.autoRepeats,key)) {
 		if (xkbDebugFlags&0x10)
 		    DebugF("Starting software autorepeat...\n");
+#ifdef XWIN_WINIME
+//		if (findProcessKey(xE->u.keyButtonPointer.time, key) != TRUE)
+		if (xE->u.keyButtonPointer.pad1 != 1)
+		{
+//ErrorF("%s(key= %d)\n", __FUNCTION__, key);
+#endif
 		xkbi->repeatKey = key;
 		xkbi->repeatKeyTimer= TimerSet(xkbi->repeatKeyTimer,
 					0, ctrls->repeat_delay,
 					AccessXRepeatKeyExpire, (pointer)keybd);
+#ifdef XWIN_WINIME
+		}
+#endif
 	    }
 	}
     }

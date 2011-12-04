@@ -64,6 +64,9 @@ extern Bool			g_fKeyboardHookLL;
 extern Bool			g_fNoHelpMessageBox;                     
 extern Bool			g_fSoftwareCursor;
 extern Bool			g_fSilentDupError;
+#ifdef XWIN_WINIME
+extern Bool			g_fIME;
+#endif
 
 /* globals required by callback function for monitor information */
 struct GetMonitorInfoData {
@@ -1269,6 +1272,17 @@ ddxProcessArgument (int argc, char *argv[], int i)
       return 1;
     }
 
+#ifdef XWIN_WINIME
+  /*
+   * Look for the '-ime' argument
+   */
+  if (IS_OPTION ("-ime"))
+    {
+      g_fIME = TRUE;
+      return 1;
+    }
+#endif
+
   /*
    * Look for the '-fp' argument
    */
@@ -1379,6 +1393,7 @@ ddxProcessArgument (int argc, char *argv[], int i)
     {
       CHECK_ARGS (1);
       g_iLogVerbose = atoi(argv[++i]);
+      ErrorF("loglevel %d\n", g_iLogVerbose);
       return 2;
     }
 

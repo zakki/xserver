@@ -143,6 +143,9 @@ static XkbDescPtr       xkb_cached_map = NULL;
 _X_EXPORT Bool		noXkbExtension=		XKB_DFLT_DISABLED;
 static Bool		XkbWantRulesProp=	XKB_DFLT_RULES_PROP;
 
+#ifdef XWIN_WINIME
+extern void XkbFreeFilters(XkbSrvInfoPtr xkbi);
+#endif
 /***====================================================================***/
 
 static char *
@@ -791,6 +794,10 @@ XkbFreeInfo(XkbSrvInfoPtr xkbi)
 	xkbi->desc= NULL;
     }
     _XkbFree(xkbi);
+
+#ifdef XWIN_WINIME
+    XkbFreeFilters(xkbi);
+#endif
     return;
 }
 

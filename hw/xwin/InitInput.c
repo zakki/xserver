@@ -65,6 +65,14 @@ extern winDispatchProcPtr	winProcEstablishConnectionOrig;
 extern winDispatchProcPtr	winProcQueryTreeOrig;
 #endif
 
+#ifdef XWIN_WINIME
+extern winDispatchProcPtr	winimeProcEstablishConnectionOrig;
+extern winDispatchProcPtr	winimeProcQueryTreeOrig;
+DISPATCH_PROC(winimeProcEstablishConnection);
+DISPATCH_PROC(winimeProcQueryTree);
+
+extern Bool			g_fIME;
+#endif
 
 /* Called from dix/devices.c */
 /*
@@ -141,6 +149,27 @@ InitInput (int argc, char *argv[])
     {
       winProcQueryTreeOrig = ProcVector[X_QueryTree];
       ProcVector[X_QueryTree] = winProcQueryTree;
+    }
+#endif
+#ifdef XWIN_WINIME
+    if (g_fIME)
+    {
+	winDebug ("winInitImServer ()- WinIME Extension Init.\n");
+	winWinIMEExtensionInit ();
+
+	/*
+	 * Wrap some functions at every generation of the server.
+	 */
+	if (InitialVector[2] != winimeProcEstablishConnection)
+	{
+	    winimeProcEstablishConnectionOrig = InitialVector[2];
+	    InitialVector[2] = winimeProcEstablishConnection;
+	}
+	if (g_fXdmcpEnabled && (ProcVector[X_QueryTree] != winimeProcQueryTree))
+	{
+	    winimeProcQueryTreeOrig = ProcVector[X_QueryTree];
+	    ProcVector[X_QueryTree] = winimeProcQueryTree;
+	}
     }
 #endif
 

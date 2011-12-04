@@ -53,6 +53,9 @@ extern WINPREFS			pref;
 extern Bool			g_fClipboardStarted;
 #endif
 extern Bool			g_fSoftwareCursor;
+#ifdef XWIN_WINIME
+extern Bool			g_fIMEStarted;
+#endif
 
 #if defined(XWIN_MULTIWINDOW)
 extern HICON                    g_hIconX;
@@ -103,6 +106,9 @@ winDrawURLWindow (LPARAM lParam)
   COLORREF crText;
   
   draw = (DRAWITEMSTRUCT *) lParam;
+#ifdef XWIN_WINIME
+winDebug("call GetWindowText(1)\n");
+#endif
   GetWindowText (draw->hwndItem, str, sizeof(str));
   str[255] = 0;
   GetClientRect (draw->hwndItem, &rect);
@@ -275,6 +281,10 @@ winDisplayExitDialog (winPrivScreenPtr pScreenPriv)
 #if defined(XWIN_CLIPBOARD)
   if (g_fClipboardStarted)
     liveClients--; /* clipboard manager */
+#endif
+#ifdef XWIN_WINIME
+  if (g_fIMEStarted)
+    liveClients--; /* internal kinput2 */
 #endif
 
   /* A user reported that this sometimes drops below zero. just eye-candy. */ 

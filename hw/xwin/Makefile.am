@@ -1,5 +1,10 @@
 bin_PROGRAMS = XWin
 
+if XWIN_WINIME
+SUBDIRS = winime
+DIST_SUBDIRS = winime
+endif
+
 if XWIN_CLIPBOARD
 SRCS_CLIPBOARD = \
 	winclipboardinit.c \
@@ -71,6 +76,58 @@ SRCS_XV = \
 DEFS_XV = -DXWIN_XV
 endif
 
+if XWIN_WINIME
+SRCS_WINIME = \
+	winime.c \
+	winimewrap.c \
+	kinput2-v3.1/cmd/kinput2.c \
+	kinput2-v3.1/lib/AdoptedShe.c \
+	kinput2-v3.1/lib/asyncerr.c \
+	kinput2-v3.1/lib/AuxPanel.c \
+	kinput2-v3.1/lib/cachedatom.c \
+	kinput2-v3.1/lib/cachedfont.c \
+	kinput2-v3.1/lib/CandPanel.c \
+	kinput2-v3.1/lib/Canvas.c \
+	kinput2-v3.1/lib/CanvasShel.c \
+	kinput2-v3.1/lib/ConvCtrl.c \
+	kinput2-v3.1/lib/ConvDisp.c \
+	kinput2-v3.1/lib/ConvMgr.c \
+	kinput2-v3.1/lib/ctext.c \
+	kinput2-v3.1/lib/dispatch.c \
+	kinput2-v3.1/lib/fontbank.c \
+	kinput2-v3.1/lib/fontset.c \
+	kinput2-v3.1/lib/ICLabel.c \
+	kinput2-v3.1/lib/imlib/imattr.c \
+	kinput2-v3.1/lib/imlib/imbuf.c \
+	kinput2-v3.1/lib/imlib/imconv.c \
+	kinput2-v3.1/lib/imlib/imdata.c \
+	kinput2-v3.1/lib/imlib/imdispatch.c \
+	kinput2-v3.1/lib/imlib/imic.c \
+	kinput2-v3.1/lib/imlib/improto.c \
+	kinput2-v3.1/lib/imlib/imrequest.c \
+	kinput2-v3.1/lib/imlib/imxport.c \
+	kinput2-v3.1/lib/KIMProto.c \
+	kinput2-v3.1/lib/InputConv.c \
+	kinput2-v3.1/lib/ioecall.c \
+	kinput2-v3.1/lib/KIProto.c \
+	kinput2-v3.1/lib/OffConv.c \
+	kinput2-v3.1/lib/OnConv.c \
+	kinput2-v3.1/lib/OverConv.c \
+	kinput2-v3.1/lib/parsekey.c \
+	kinput2-v3.1/lib/WcharDisp.c \
+	kinput2-v3.1/lib/WinIMM32.c \
+	kinput2-v3.1/lib/wstring.c \
+	kinput2-v3.1/lib/XimpProto.c \
+	kinput2-v3.1/lib/xtwstr.c \
+	kinput2-v3.1/lib/xwstr.c
+DEFS_WINIME = -DXWIN_WINIME -DUSE_WINIME -DFOR_ACS
+XWIN_WINIME_LIBS = -Lwinime -lwinime -lXaw -lXext -lXt -lXmu -limm32 -liconv
+XWIN_WINIME_INCLUDES = -I$(srcdir)/winime \
+	-I$(srcdir)/kinput2-v3.1 \
+	-I$(srcdir)/kinput2-v3.1/include \
+	-I$(srcdir)/kinput2-v3.1/lib/imlib
+endif
+
 SRCS =	InitInput.c \
 	InitOutput.c \
 	winallpriv.c \
@@ -133,7 +190,8 @@ SRCS =	InitInput.c \
 	$(SRCS_NATIVEGDI) \
 	$(SRCS_PRIMARYFB) \
 	$(SRCS_RANDR) \
-	$(SRCS_XV)
+	$(SRCS_XV) \
+	$(SRCS_WINIME)
 
  DEFS = $(DEFS_CLIPBOARD) \
 	$(DEFS_GLX_WINDOWS) \
@@ -142,14 +200,15 @@ SRCS =	InitInput.c \
 	$(DEFS_NATIVEGDI) \
 	$(DEFS_PRIMARYFB) \
 	$(DEFS_RANDR) \
-	$(DEFS_XV)
+	$(DEFS_XV) \
+	$(DEFS_WINIME)
 
 XWin_SOURCES = $(SRCS)
 
-INCLUDES = -I$(top_srcdir)/miext/rootless
+INCLUDES = -I$(top_srcdir)/miext/rootless $(XWIN_WINIME_INCLUDES)
 
 XWin_DEPENDENCIES = $(XWIN_LIBS)
-XWin_LDADD = $(MULTIWINDOWEXTWM_LIBS) $(XWIN_LIBS) $(XSERVER_LIBS) $(XSERVER_SYS_LIBS) $(XWIN_SYS_LIBS)
+XWin_LDADD = $(MULTIWINDOWEXTWM_LIBS) $(XWIN_LIBS) $(XSERVER_LIBS) $(XSERVER_SYS_LIBS) $(XWIN_SYS_LIBS) $(XWIN_WINIME_LIBS)
 XWin_LDFLAGS = -mwindows
 
 .rc.o:

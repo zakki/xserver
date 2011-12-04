@@ -69,6 +69,9 @@ winClipboardFlushXEvents (HWND hwnd,
       atomTargets = XInternAtom (pDisplay, "TARGETS", False);
     }
 
+#ifdef XWIN_WINIME
+winDebug("%s()\n", __FUNCTION__);
+#endif
   /* Process all pending events */
   while (XPending (pDisplay))
     {
@@ -96,15 +99,30 @@ winClipboardFlushXEvents (HWND hwnd,
 
       /* Get the next event - will not block because one is ready */
       XNextEvent (pDisplay, &event);
+#ifdef XWIN_WINIME
+winDebug("    event = %d\n", event.type);
+#endif
 
       /* Branch on the event type */
       switch (event.type)
 	{
+#ifdef XWIN_WINIME
+	  /*
+	   * SelectionClear
+	   */
+
+	case SelectionClear:
+winDebug("    case SelectionClear\n");
+	  break;
+#endif
 	  /*
 	   * SelectionRequest
 	   */
 
 	case SelectionRequest:
+#ifdef XWIN_WINIME
+winDebug("    case SelectionRequest\n");
+#endif
 #if 0
 	  {
 	    char			*pszAtomName = NULL;
@@ -174,6 +192,9 @@ winClipboardFlushXEvents (HWND hwnd,
 	       * Notify the requesting window that
 	       * the operation has completed
 	       */
+#ifdef XWIN_WINIME
+winDebug("send SelectionNotify(1)\n");
+#endif
 	      iReturn = XSendEvent (pDisplay,
 				    eventSelection.requestor,
 				    False,
@@ -218,12 +239,21 @@ winClipboardFlushXEvents (HWND hwnd,
 	    }
 
 	  /* Close clipboard if we have it open already */
+#ifdef XWIN_WINIME
+winDebug("call GetOpenClipboardWindow(3)\n");
+#endif
 	  if (GetOpenClipboardWindow () == hwnd)
 	    {
+#ifdef XWIN_WINIME
+winDebug("call CloseClipboard(6)\n");
+#endif
 	      CloseClipboard ();
 	    }
 
 	  /* Access the clipboard */
+#ifdef XWIN_WINIME
+winDebug("call OpenClipboard(4)\n");
+#endif
 	  if (!OpenClipboard (hwnd))
 	    {
 	      ErrorF ("winClipboardFlushXEvents - SelectionRequest - "
@@ -259,11 +289,17 @@ winClipboardFlushXEvents (HWND hwnd,
 	  if (fUseUnicode)
 	    {
 	      /* Retrieve clipboard data */
+#ifdef XWIN_WINIME
+winDebug("call GetClipboardData()\n");
+#endif
 	      hGlobal = GetClipboardData (CF_UNICODETEXT);
 	    }
 	  else
 	    {
 	      /* Retrieve clipboard data */
+#ifdef XWIN_WINIME
+winDebug("call GetClipboardData()\n");
+#endif
 	      hGlobal = GetClipboardData (CF_TEXT);
 	    }
 	  if (!hGlobal)
@@ -397,6 +433,9 @@ winClipboardFlushXEvents (HWND hwnd,
 	  eventSelection.time = event.xselectionrequest.time;
 
 	  /* Notify the requesting window that the operation has completed */
+#ifdef XWIN_WINIME
+winDebug("send SelectionNotify(2)\n");
+#endif
 	  iReturn = XSendEvent (pDisplay,
 				eventSelection.requestor,
 				False,
@@ -442,6 +481,9 @@ winClipboardFlushXEvents (HWND hwnd,
 	      eventSelection.time = event.xselectionrequest.time;
 
 	      /* Notify the requesting window that the operation is complete */
+#ifdef XWIN_WINIME
+winDebug("send SelectionNotify(3)\n");
+#endif
 	      iReturn = XSendEvent (pDisplay,
 				    eventSelection.requestor,
 				    False,
@@ -472,6 +514,9 @@ winClipboardFlushXEvents (HWND hwnd,
 	   */ 
 
 	case SelectionNotify:
+#ifdef XWIN_WINIME
+winDebug("    case SelectionNotify\n");
+#endif
 #if 0
 	  ErrorF ("winClipboardFlushXEvents - SelectionNotify\n");
 	  {
@@ -507,6 +552,9 @@ winClipboardFlushXEvents (HWND hwnd,
 		  ErrorF ("winClipboardFlushXEvents - SelectionNotify - "
 			  "Requesting conversion of UTF8 target.\n");
 #endif
+#ifdef XWIN_WINIME
+winDebug("call XConvertSelection(2)\n");
+#endif
 		  iReturn = XConvertSelection (pDisplay,
 					       event.xselection.selection,
 					       XA_STRING,
@@ -532,6 +580,9 @@ winClipboardFlushXEvents (HWND hwnd,
 #if 0
 		  ErrorF ("winClipboardFlushXEvents - SelectionNotify - "
 			  "Requesting conversion of CompoundText target.\n");
+#endif
+#ifdef XWIN_WINIME
+winDebug("call XConvertSelection(3)\n");
 #endif
 		  iReturn = XConvertSelection (pDisplay,
 					       event.xselection.selection,
@@ -789,9 +840,23 @@ winClipboardFlushXEvents (HWND hwnd,
 
 	  /* Push the selection data to the Windows clipboard */
 	  if (fUseUnicode)
+#ifdef XWIN_WINIME
+{
+winDebug("call SetClipboardData(5), hGlobal\n");
+#endif
 	    SetClipboardData (CF_UNICODETEXT, hGlobal);
+#ifdef XWIN_WINIME
+}
+#endif
 	  else
+#ifdef XWIN_WINIME
+{
+winDebug("call SetClipboardData(6), hGlobal\n");
+#endif
 	    SetClipboardData (CF_TEXT, hGlobal);
+#ifdef XWIN_WINIME
+}
+#endif
 
 	  /* Flag that SetClipboardData has been called */
 	  fSetClipboardData = FALSE;
@@ -819,9 +884,23 @@ winClipboardFlushXEvents (HWND hwnd,
 	  if (hGlobal && pszGlobalData)
 	    GlobalUnlock (hGlobal);
 	  if (fSetClipboardData && g_fUnicodeSupport)
+#ifdef XWIN_WINIME
+{
+winDebug("call SetClipboardData(7), NULL\n");
+#endif
 	    SetClipboardData (CF_UNICODETEXT, NULL);
+#ifdef XWIN_WINIME
+}
+#endif
 	  if (fSetClipboardData)
+#ifdef XWIN_WINIME
+{
+winDebug("call SetClipboardData(8), NULL\n");
+#endif
 	    SetClipboardData (CF_TEXT, NULL);
+#ifdef XWIN_WINIME
+}
+#endif
 	  return WIN_XEVENTS_NOTIFY;
 
 	default:

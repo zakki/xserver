@@ -41,6 +41,15 @@
 #include "winconfig.h"
 #include "winmsg.h"
 #include "inputstr.h"
+/* >> add 2005.04.25 Y.A. */
+#ifdef XWIN_WINIME
+#define _WINIME_SERVER_
+#include <X11/extensions/winime.h>
+#include <X11/extensions/winimestr.h>
+#include <imm.h>
+extern HWND g_hwndLastKeyPress;
+#endif
+/* << add 2005.04.25 Y.A. */
 
 #ifdef XKB
 extern BOOL winCheckKeyPressed(WPARAM wParam, LPARAM lParam);
@@ -66,6 +75,9 @@ extern Bool			g_fKeyboardHookLL;
 extern HWND			g_hwndKeyboardFocus;
 extern Bool			g_fSoftwareCursor;
 extern DWORD			g_dwCurrentThreadID;
+#ifdef XWIN_WINIME
+extern Bool			g_fIME;
+#endif
 
 
 /*
@@ -88,7 +100,7 @@ winWindowProc (HWND hwnd, UINT message,
   int				iScanCode;
   int				i;
 
-#if CYGDEBUG
+#if CYGDEBUG | TRUE
   winDebugWin32Message("winWindowProc", hwnd, message, wParam, lParam);
 #endif
   
@@ -121,6 +133,12 @@ winWindowProc (HWND hwnd, UINT message,
   /* Branch on message type */
   switch (message)
     {
+#ifdef XWIN_WINIME
+    case WM_COPY:
+      
+
+      return 0;
+#endif
     case WM_TRAYICON:
       return winHandleIconMessage (hwnd, message, wParam, lParam,
 				   s_pScreenPriv);
@@ -146,6 +164,15 @@ winWindowProc (HWND hwnd, UINT message,
       s_hwndLastPrivates = hwnd;
       s_uTaskbarRestart = RegisterWindowMessage(TEXT("TaskbarCreated"));
       SetProp (hwnd, WIN_SCR_PROP, s_pScreenPriv);
+
+// >> add 2005.04.25 Y.A.
+#ifdef XWIN_WINIME
+      g_hwndLastKeyPress = hwnd;
+winDebug(" 10. g_hwndLastKeyPress = %lX\n", g_hwndLastKeyPress);
+      /* Disable IME by default */
+      ImmAssociateContext (hwnd, (HIMC) NULL);
+#endif
+// << add 2005.04.25 Y.A.
 
       /* Setup tray icon */
       if (!s_pScreenInfo->fNoTrayIcon)
@@ -976,6 +1003,10 @@ winWindowProc (HWND hwnd, UINT message,
       /* Add the keyboard hook if possible */
       if (g_fKeyboardHookLL)
 	g_fKeyboardHookLL = winInstallKeyboardHookLL ();
+#ifdef XWIN_WINIME
+      g_hwndLastKeyPress = hwnd;
+winDebug(" 11. g_hwndLastKeyPress = %lX\n", g_hwndLastKeyPress);
+#endif
       return 0;
 
     case WM_KILLFOCUS:
@@ -994,6 +1025,17 @@ winWindowProc (HWND hwnd, UINT message,
 
     case WM_SYSKEYDOWN:
     case WM_KEYDOWN:
+// >> add 2005.04.25 Y.A.
+#ifdef XWIN_WINIME
+      g_hwndLastKeyPress = hwnd;
+winDebug(" 12. g_hwndLastKeyPress = %lX (keycode = %d, %s, wParam = 0x%02X)\n", g_hwndLastKeyPress, LOBYTE (HIWORD (lParam)) + 8, (message == WM_KEYDOWN)?"WM_KEYDOWN":"WM_SYSKEYDOWN", wParam);
+      /*
+       * Ignore IME process key
+       */
+// test      if (wParam == VK_PROCESSKEY) return 0;
+#endif
+// << add 2005.04.25 Y.A.
+
       if (s_pScreenPriv == NULL || s_pScreenInfo->fIgnoreInput)
 	break;
 
@@ -1030,7 +1072,10 @@ winWindowProc (HWND hwnd, UINT message,
        * but we should determine if that is desirable before doing so.
        */
       if ((wParam == VK_LWIN || wParam == VK_RWIN) && !g_fKeyboardHookLL)
+      {
+        ErrorF ("winWindowProc - WM_*KEYDOWN - Don't do anything for the Windows keys\n");
 	break;
+      }
 
 #ifdef XKB
       /* 
@@ -1047,9 +1092,13 @@ winWindowProc (HWND hwnd, UINT message,
           case VK_CONTROL:
           case VK_SHIFT:
             if (winCheckKeyPressed(wParam, lParam))
+            {
+              winDebug ("winWindowProc - WM_*KEYDOWN - Windows auto-repeat\n");
               return 0;
+            }
             break;
           default:
+            winDebug ("winWindowProc - WM_*KEYDOWN - Windows auto-repeat\n");
             return 0;
         }
       } 
@@ -1057,9 +1106,36 @@ winWindowProc (HWND hwnd, UINT message,
       
       /* Discard fake Ctrl_L presses that precede AltGR on non-US keyboards */
       if (winIsFakeCtrl_L (message, wParam, lParam))
+      {
+        ErrorF ("winWindowProc - WM_*KEYDOWN - Ctrl_L\n");
 	return 0;
+      }
       
       /* Translate Windows key code to X scan code */
+#ifdef XWIN_WINIME
+      if (wParam == VK_PROCESSKEY)
+      {
+	UINT OrigVKey;
+#if 0	// 機能しない
+	OrigVKey = ImmGetVirtualKey(hwnd);
+#endif	// #if 0
+	OrigVKey = MapVirtualKeyEx(LOBYTE (HIWORD (lParam)), 3, GetKeyboardLayout(0));
+winDebug("  Target is VK_PROCESSKEY, Orig = %d\n", OrigVKey);
+#ifdef FOR_ACS
+// 汚いけどこう逃げておく
+	if (OrigVKey == VK_CLEAR)
+	{
+	    unsigned short	uKeyStates;
+winDebug("hit VK_CLEAR\n");
+	    uKeyStates = GetKeyState(VK_CLEAR);
+winDebug("GetKeyState() = 0x%04X\n", uKeyStates);
+	    if (uKeyStates & 0x8000)	// 本当にVK_CLEARかどうか確かめる
+		wParam = VK_CLEAR;
+	}
+#endif	// #ifdef FOR_ACS
+        winTranslateKey (OrigVKey, lParam, &iScanCode);
+      } else
+#endif	// #ifdef XWIN_WINIME
       winTranslateKey (wParam, lParam, &iScanCode);
 
       /* Ignore repeats for CapsLock */
@@ -1067,12 +1143,30 @@ winWindowProc (HWND hwnd, UINT message,
 	lParam = 1;
 
       /* Send the key event(s) */
+#ifdef XWIN_WINIME
+      if (wParam == VK_PROCESSKEY)
+      {
+        for (i = 0; i < LOWORD(lParam); ++i)
+	  winSendImeKeyEvent (iScanCode, TRUE);
+        return 0;
+      }
+#endif
       for (i = 0; i < LOWORD(lParam); ++i)
 	winSendKeyEvent (iScanCode, TRUE);
       return 0;
 
     case WM_SYSKEYUP:
     case WM_KEYUP:
+// >> add 2005.04.25 Y.A.
+#ifdef XWIN_WINIME
+      g_hwndLastKeyPress = hwnd;
+winDebug(" 13. g_hwndLastKeyPress = %lX (keycode = %d, %s, wParam = 0x%02X)\n", g_hwndLastKeyPress, LOBYTE (HIWORD (lParam)) + 8, (message == WM_KEYUP)?"WM_KEYUP":"WM_SYSKEYUP", wParam);
+      /*
+       * Ignore IME process key
+       */
+#endif
+// << add 2005.04.25 Y.A.
+
       if (s_pScreenPriv == NULL || s_pScreenInfo->fIgnoreInput)
 	break;
 
@@ -1089,7 +1183,26 @@ winWindowProc (HWND hwnd, UINT message,
 	return 0;
 
       /* Enqueue a keyup event */
+#ifdef XWIN_WINIME
+      if (wParam == VK_PROCESSKEY)
+      {
+	UINT OrigVKey;
+#if 0	// 機能しない
+	OrigVKey = ImmGetVirtualKey(hwnd);
+#endif
+	OrigVKey = MapVirtualKeyEx(LOBYTE (HIWORD (lParam)), 3, GetKeyboardLayout(0));
+winDebug("  Target is VK_PROCESSKEY, Orig = %d\n", OrigVKey);
+        winTranslateKey (OrigVKey, lParam, &iScanCode);
+      } else
+#endif
       winTranslateKey (wParam, lParam, &iScanCode);
+#ifdef XWIN_WINIME
+      if (wParam == VK_PROCESSKEY)
+      {
+	winSendImeKeyEvent (iScanCode, FALSE);
+        return 0;
+      }
+#endif
       winSendKeyEvent (iScanCode, FALSE);
 
       /* Release all pressed shift keys */
@@ -1275,6 +1388,24 @@ winWindowProc (HWND hwnd, UINT message,
       break;
 #endif
 
+#ifdef XWIN_WINIME
+    case WM_IME_STARTCOMPOSITION:
+    case WM_IME_ENDCOMPOSITION:
+    case WM_IME_COMPOSITION:
+    case WM_IME_SETCONTEXT:		//
+    case WM_IME_NOTIFY:
+    case WM_IME_CONTROL:		//
+    case WM_IME_COMPOSITIONFULL:	//
+    case WM_IME_SELECT:			//
+    case WM_IME_CHAR:
+    case WM_IME_REQUEST:		//
+    case WM_IME_KEYDOWN:		//
+    case WM_IME_KEYUP:			//
+
+    case WM_CHAR:
+      return winIMEMessageHandler (hwnd, message, wParam, lParam);
+#endif
+
     default:
       if(message == s_uTaskbarRestart)
 	{
@@ -1284,4 +1415,35 @@ winWindowProc (HWND hwnd, UINT message,
     }
 
   return DefWindowProc (hwnd, message, wParam, lParam);
+}
+
+void
+winProcessMessage (LPMSG lpMsg)
+{
+#if 0
+  if (lpMsg->message == WM_KEYUP || lpMsg->message == WM_KEYDOWN)
+    {
+      winDebug("winProcessMessage %d\n", GetTickCount());
+      winDebug("msg:0x%02x wParam:0x%04x time:%d", lpMsg->message, lpMsg->wParam, lpMsg->time);
+      winDebug("lParam:count(0x%04x) scancode(0x%02x) flag(0x%x,0x%x,0x%x,0x%x)\n",
+	       LOWORD (lpMsg->lParam),
+	       LOBYTE (HIWORD (lpMsg->lParam)),
+	       (HIBYTE (HIWORD (lpMsg->lParam)) & 0x01) >> 0,
+	       (HIBYTE (HIWORD (lpMsg->lParam)) & 0x20) >> 5,
+	       (HIBYTE (HIWORD (lpMsg->lParam)) & 0x40) >> 6,
+	       (HIBYTE (HIWORD (lpMsg->lParam)) & 0x80) >> 7);
+    }
+#endif
+//#ifdef XWIN_WINIME
+#if 1
+  if (
+#ifdef XWIN_WINIME
+      g_fIME && 
+#endif
+      (lpMsg->wParam == VK_PROCESSKEY))
+    {
+      TranslateMessage(lpMsg);
+    }
+#endif
+  DispatchMessage (lpMsg);
 }

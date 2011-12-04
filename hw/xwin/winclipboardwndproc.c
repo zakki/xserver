@@ -48,6 +48,10 @@ extern void		winFixClipboardChain();
 #define WIN_CLIPBOARD_PROP	"cyg_clipboard_prop"
 #define WIN_POLL_TIMEOUT	1
 
+#ifdef XWIN_WINIME
+extern HWND		g_hwndLastKeyPress;
+extern HGLOBAL		g_hText;
+#endif
 
 /*
  * References to external symbols
@@ -85,7 +89,25 @@ winProcessXEventsTimeout (HWND hwnd, int iWindow, Display *pDisplay,
   DWORD			dwStopTime = (GetTickCount () / 1000) + iTimeoutSec;
 
   /* We need to ensure that all pending events are processed */
+#ifdef XWIN_WINIME
+winDebug ("%s() - We need to ensure that all pending events are processed -\n", __FUNCTION__);
+#endif
+#if 0
+#ifdef XWIN_WINIME
+if (XEventsQueued(pDisplay, QueuedAfterFlush) != 0)
+{
+winDebug("exec Xsync()\n");
+#endif
   XSync (pDisplay, FALSE);
+#ifdef XWIN_WINIME
+}
+#endif
+#else
+  XFlush(pDisplay);
+#endif
+#ifdef XWIN_WINIME
+winDebug ("%s() - XSync end.\n", __FUNCTION__);
+#endif
 
   /* Get our connection number */
   iConnNumber = ConnectionNumber (pDisplay);
@@ -160,6 +182,9 @@ winClipboardWindowProc (HWND hwnd, UINT message,
   static Bool		s_fCBCInitialized;
 
   /* Branch on message type */
+#ifdef XWIN_WINIME
+winDebug("%s(), message = 0x%04X, time = %ld\n", __FUNCTION__, message, GetTickCount());
+#endif
   switch (message)
     {
     case WM_DESTROY:
@@ -167,6 +192,9 @@ winClipboardWindowProc (HWND hwnd, UINT message,
 	winDebug ("winClipboardWindowProc - WM_DESTROY\n");
 
 	/* Remove ourselves from the clipboard chain */
+#ifdef XWIN_WINIME
+winDebug("call ChangeClipboardChain()\n");
+#endif
 	ChangeClipboardChain (hwnd, s_hwndNextViewer);
 	
 	s_hwndNextViewer = NULL;
@@ -316,6 +344,9 @@ winClipboardWindowProc (HWND hwnd, UINT message,
 	 */
 	
 	/* Bail when we still own the clipboard */
+#ifdef XWIN_WINIME
+winDebug("call GetClipboardOwner(2)\n");
+#endif
 	if (hwnd == GetClipboardOwner ())
 	  {
 
@@ -333,6 +364,9 @@ winClipboardWindowProc (HWND hwnd, UINT message,
 	 * other than CF_TEXT or CF_UNICODETEXT has been copied
 	 * into the Win32 clipboard.
 	 */
+#ifdef XWIN_WINIME
+winDebug("call IsClipboardFormatAvailable(1)\n");
+#endif
 	if (!IsClipboardFormatAvailable (CF_TEXT)
 	    && !IsClipboardFormatAvailable (CF_UNICODETEXT))
 	  {
@@ -353,6 +387,9 @@ winClipboardWindowProc (HWND hwnd, UINT message,
 	      {
 		winDebug ("winClipboardWindowProc - WM_DRAWCLIPBOARD - "
 			"PRIMARY selection is owned by us.\n");
+#ifdef XWIN_WINIME
+winDebug("call XSetSelectionOwner(3)\n");
+#endif
 		XSetSelectionOwner (pDisplay,
 				    XA_PRIMARY,
 				    None,
@@ -369,6 +406,9 @@ winClipboardWindowProc (HWND hwnd, UINT message,
 	      {
 		winDebug ("winClipboardWindowProc - WM_DRAWCLIPBOARD - "
 			"CLIPBOARD selection is owned by us.\n");
+#ifdef XWIN_WINIME
+winDebug("call XSetSelectionOwner(4)\n");
+#endif
 		XSetSelectionOwner (pDisplay,
 				    atomClipboard,
 				    None,
@@ -386,6 +426,9 @@ winClipboardWindowProc (HWND hwnd, UINT message,
 	  }
 
 	/* Reassert ownership of PRIMARY */	  
+#ifdef XWIN_WINIME
+winDebug("call XSetSelectionOwner(5)\n");
+#endif
 	iReturn = XSetSelectionOwner (pDisplay,
 				      XA_PRIMARY,
 				      iWindow,
@@ -403,6 +446,9 @@ winClipboardWindowProc (HWND hwnd, UINT message,
 	  }
 	
 	/* Reassert ownership of the CLIPBOARD */	  
+#ifdef XWIN_WINIME
+winDebug("call XSetSelectionOwner(6)\n");
+#endif
 	iReturn = XSetSelectionOwner (pDisplay,
 				      atomClipboard,
 				      iWindow,
@@ -454,7 +500,28 @@ winClipboardWindowProc (HWND hwnd, UINT message,
 	Window	iWindow = g_iClipboardWindow;
 	Bool	fConvertToUnicode;
 
+#ifdef XWIN_WINIME
+    if (message == WM_RENDERFORMAT)
+	winDebug ("winClipboardWindowProc - WM_RENDERFORMAT - Hello.\n");
+    else
+	winDebug ("winClipboardWindowProc - WM_RENDERALLFORMATS - Hello.\n");
+#else
 	winDebug ("winClipboardWindowProc - WM_RENDER*FORMAT - Hello.\n");
+#endif
+#ifdef XWIN_WINIME	// >> test
+/*
+if (hwnd == GetForegroundWindow())
+{
+    winDebug("%s() My Window == Forground Window\n", __FUNCTION__);
+}
+*/
+winDebug("%s() Clip = 0x%08X, X = 0x%08X, Fore = 0x%08X\n", __FUNCTION__, hwnd, g_hwndLastKeyPress, GetForegroundWindow());
+/*
+if (g_hwndLastKeyPress == GetForegroundWindow())
+    SetForegroundWindow(hwnd);
+*/
+//    SetForegroundWindow(HWND_DESKTOP);
+#endif	// << test
 
 	/* Flag whether to convert to Unicode or not */
 	if (message == WM_RENDERALLFORMATS)
@@ -463,6 +530,15 @@ winClipboardWindowProc (HWND hwnd, UINT message,
 	  fConvertToUnicode = g_fUnicodeSupport && (CF_UNICODETEXT == wParam);
 
 	/* Request the selection contents */
+#ifdef XWIN_WINIME
+/*
+{
+    iReturn = XGetSelectionOwner (pDisplay, XA_PRIMARY);
+    winDebug("XA_PRIMARY is owned by %d\n", iReturn);
+}
+*/
+winDebug("call XConvertSelection(1), synchandler = 0x%08X\n", ((_XPrivDisplay)pDisplay)->private15);
+#endif
 	iReturn = XConvertSelection (pDisplay,
 				     g_atomLastOwnedSelection,
 				     XInternAtom (pDisplay,
@@ -477,6 +553,9 @@ winClipboardWindowProc (HWND hwnd, UINT message,
 		    "XConvertSelection () failed\n");
 	    break;
 	  }
+#ifdef XWIN_WINIME
+winDebug("XConvertSelection() return %d\n", iReturn);
+#endif
 
 	/* Special handling for WM_RENDERALLFORMATS */
 	if (message == WM_RENDERALLFORMATS)
@@ -484,11 +563,20 @@ winClipboardWindowProc (HWND hwnd, UINT message,
 	    /* We must open and empty the clipboard */
 
 	    /* Close clipboard if we have it open already */
+#ifdef XWIN_WINIME
+winDebug("call GetOpenClipboardWindow(1)\n");
+#endif
 	    if (GetOpenClipboardWindow () == hwnd)
 	      {
+#ifdef XWIN_WINIME
+winDebug("call CloseClipboard(1)\n");
+#endif
 		CloseClipboard ();
 	      }	    
 
+#ifdef XWIN_WINIME
+winDebug("call OpenClipboard(1)\n");
+#endif
 	    if (!OpenClipboard (hwnd))
 	      {
 		winErrorFVerb (1, "winClipboardWindowProc - WM_RENDER*FORMATS - "
@@ -497,6 +585,9 @@ winClipboardWindowProc (HWND hwnd, UINT message,
 		break;
 	      }
 	    
+#ifdef XWIN_WINIME
+winDebug("call EmptyClipboard(1)\n");
+#endif
 	    if (!EmptyClipboard ())
 	      {
 		winErrorFVerb (1, "winClipboardWindowProc - WM_RENDER*FORMATS - "
@@ -535,12 +626,40 @@ winClipboardWindowProc (HWND hwnd, UINT message,
 	 */
 	if (WIN_XEVENTS_NOTIFY != iReturn)
 	  {
+#ifdef XWIN_WINIME
+	    char *pText;
+
+	    if (g_hText == NULL)
+	    {
+		g_hText = GlobalAlloc(GMEM_DDESHARE | GMEM_MOVEABLE, 2);
+		pText = GlobalLock(g_hText);
+		pText[0] = 0;
+		pText[1] = 0;
+		GlobalUnlock(g_hText);
+	    }
+#endif
 	    /* Paste no data, to satisfy required call to SetClipboardData */
+#ifdef XWIN_WINIME
+	    if (g_fUnicodeSupport)
+	      SetClipboardData (CF_UNICODETEXT, g_hText);
+#else
 	    if (g_fUnicodeSupport)
 	      SetClipboardData (CF_UNICODETEXT, NULL);
+#endif
+#ifdef XWIN_WINIME
+	    SetClipboardData (CF_TEXT, g_hText);
+#else
 	    SetClipboardData (CF_TEXT, NULL);
+#endif
 
             ErrorF("winClipboardWindowProc - timed out waiting for WIN_XEVENTS_NOTIFY\n");
+#ifdef XWIN_WINIME
+//winDebug("call CloseClipboard(3)\n");
+//	    CloseClipboard ();
+//	    GlobalFree(hText);
+	    winDebug ("winClipboardWindowProc - WM_RENDER*FORMAT - Abort.\n");
+	    return 0;
+#endif
 	  }
 
 	/* BPS - Post ourselves a user message whose handler will reset the
@@ -555,6 +674,9 @@ winClipboardWindowProc (HWND hwnd, UINT message,
 	  {
 	    /* We must close the clipboard */
 	    
+#ifdef XWIN_WINIME
+winDebug("call CloseClipboard(2)\n");
+#endif
 	    if (!CloseClipboard ())
 	      {
 	      winErrorFVerb (1, "winClipboardWindowProc - WM_RENDERALLFORMATS - "
@@ -601,6 +723,9 @@ winClipboardWindowProc (HWND hwnd, UINT message,
     }
 
   /* Let Windows perform default processing for unhandled messages */
+#ifdef XWIN_WINIME
+winDebug("Dispatch DefWindowProc(), message = 0x%04X, time = %ld\n", message, GetTickCount());
+#endif
   return DefWindowProc (hwnd, message, wParam, lParam);
 }
 

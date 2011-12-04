@@ -1,0 +1,143 @@
+! $Id: Kinput2.ad,v 1.24 1999/04/12 09:21:26 ishisone Exp $
+!
+!	app-defaults file for kinput2 version 2.0
+!
+!!
+!! things you shouldn't change
+!!
+Kinput2.mappedWhenManaged: false
+Kinput2.width: 1
+Kinput2.height: 1
+*converter.accelerators: <Key>: to-inputobj()
+! AIX seems to need the following superfluous definition.
+*ki2AppDefsLoaded: true
+!!
+!! title
+!!
+*SeparateConversion.title: Kana-Kanji Conversion
+*selectionShell.title: Candidate Selection
+*auxShell.title: Auxiliary Control
+! if you're using mwm (Motif1.1), you can set kanji titles.
+!*SeparateConversion.title: \033$(B$+$J4A;zJQ49
+!*SeparateConversion.titleEncoding: COMPOUND_TEXT
+!*selectionShell.title: \033$(BA*Br%Q%M%k
+!*selectionShell.titleEncoding: COMPOUND_TEXT
+!!
+!! fonts to be used by root-window type conversion widget and
+!! candidate selection widget
+!!
+*Font: -*-fixed-medium-r-normal--14-*-*-*-c-*-iso8859-1
+*KanjiFont: -misc-fixed-medium-r-normal--14-*-*-*-c-*-jisx0208.1983-0
+*KanaFont: -*-fixed-medium-r-normal--14-*-*-*-c-*-jisx0201.1976-0
+!!
+!!	Wnn setup
+!!
+*CcWnn.Jserver:		unix
+!*CcWnn.jserver2nd:	localhost
+*CcWnn.ccdef:		ccdef.kinput2.egg
+*CcWnn.wnnEnvrc:	/etc/FreeWnn/ja/wnnenvrc
+!*CcWnn.wnnEnvrc4:	"wnenvrc-file-for-Wnn4"
+!*CcWnn.wnnEnvrc6:	"wnenvrc-file-for-Wnn6"
+!!
+!!	Canna setup for version 2.x, 3.x
+!!
+*Canna.Cannahost:	localhost
+!*Canna.Cannafile:	"canna-initialization-file"
+!!
+!!	Sj3 setup
+!*Sj3.sj3serv:		"primary-sj3serv-host"
+!*Sj3.sj3serv2:		"secondary-sj3serv-host-if-any"
+!!
+!! candidate selection
+!!
+*selection.width: 500
+*selectionShell.allowShellResize: True
+*selection.cursor: left_ptr
+!!
+!! input style dependent resources
+!!
+! over-the-spot type input
+*OverTheSpotConversion.AutoSpotForwarding: true
+*OverTheSpotConversion.ShrinkWindow: true
+*OverTheSpotConversion.modeLocation: tracktext
+!*OverTheSpotConversion.modeLocation: bottomleft
+*OverTheSpotConversion*modeShell.input: false
+*OverTheSpotConversion*modeShell.allowShellResize: true
+*OverTheSpotConversion*text.borderWidth: 0
+*OverTheSpotConversion*modeShell.borderWidth: 2
+! off-the-spot type input
+*OffTheSpotConversion.input: false
+*OffTheSpotConversion*modeShell.borderWidth: 0
+*OffTheSpotConversion.text.borderWidth: 0
+! root-window type input
+*SeparateConversion*form*vertDistance: 3
+*SeparateConversion*mode.left: chainleft
+*SeparateConversion*mode.right: chainleft
+*SeparateConversion*mode.top: chaintop
+*SeparateConversion*mode.bottom: chaintop
+*SeparateConversion*mode.width: 80
+*SeparateConversion*mode.height: 20
+*SeparateConversion*mode.resizable: true
+*SeparateConversion*text.fromVert: mode
+*SeparateConversion*text.left: chainleft
+*SeparateConversion*text.right: chainright
+*SeparateConversion*text.top: chaintop
+*SeparateConversion*text.bottom: chainbottom
+*SeparateConversion*text.width: 400
+*SeparateConversion*text.height: 100
+! status display string justification -- for over-the-spot and off-the-spot
+!  "left" seems appropriate for most applications.
+*modeShell.mode.justify: left
+!!
+!! conversion protocol dependent resources
+!!
+! KinputProtocol
+*KinputProtocol.BackwardCompatible: true
+!*KinputProtocol.XlcConversionStartKey:	Shift<Key>space
+! XimpProtocol
+*XimpProtocol.ForceDefaultServer: true
+! X Input Method Protocol
+*IMProtocol.locales: ja_JP.SJIS, ja_JP.EUC, ja_JP.UTF-8, ja_JP, japanese, japan, ja, en_US.UTF-8
+! common to XimpProtocol and IMProtocol
+*defaultFontList: -misc-fixed-medium-r-normal--14-*-*-*-c-*
+*ConversionStartKeys: \
+	Shift<Key>space \n\
+	<Key>Kanji
+!!
+!! sending back unused keypress events
+!!
+*sendbackKeyPress: True
+!!
+!! title bar height of popup shells (candidate selection etc.)
+!!
+!*titlebarHeight: 24
+!!
+!! a work around for buggy window managers
+!!
+! If you encounter a strange phenomenon where kinput2's mode display
+! window is flickering and you cannot type in any text, try enabling
+! the following resource.  This phenomenon is caused by the incorrent
+! focus management of your window manager, and this resource avoids
+! it by making the window manager totally ignore the mode window.
+*OverTheSpotConversion.UseOverrideShellForMode: True
+!!
+!! Don't give input focus to the windows of kinput2, they don't need input focus
+!! it just causes problems if they get input focus.
+!!
+!! For example, if you use kinput2 with Canna and open the 'auxShell' window
+!! by pressing the 'insert' key a window pops up where special symbols
+!! can be selected. If this window gets focus, the selected symbol will not
+!! appear in the application until the application gets focus again. This is
+!! quite confusing.
+!! And there are even some applications where the selected symbol will never appear,
+!! not even when the application gets focus again, Gvim currently behaves
+!! like that and XIM in Gvim may even become completely unusable after one of
+!! the kinput2 windows got focus, making it necessary to restart Gvim to be able
+!! to use XIM again.
+!!
+!! I found no reason why one of kinput2's windows should need input focus.
+!!
+*SeparateConversion.input: false
+*selectionShell.input: false
+*auxShell.input: false
+

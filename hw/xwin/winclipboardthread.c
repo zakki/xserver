@@ -108,8 +108,16 @@ winClipboardProc (void *pvNotUsed)
   Bool			fUseUnicode;
   char			szDisplay[512];
   int			iSelectError;
+  static unsigned long	s_ulServerGeneration = 0;
 
   ErrorF ("winClipboardProc - Hello\n");
+
+  /* Watch for server reset */
+  if (s_ulServerGeneration != serverGeneration)
+    {
+      /* Save new generation number */
+      s_ulServerGeneration = serverGeneration;
+    }
 
   /* Do we have Unicode support? */
   g_fUnicodeSupport = winClipboardDetectUnicodeSupport ();
@@ -200,7 +208,8 @@ winClipboardProc (void *pvNotUsed)
       else
 	break;
     }
-  while (pDisplay == NULL && iRetries < WIN_CONNECT_RETRIES);
+  while (pDisplay == NULL && s_ulServerGeneration == serverGeneration);
+
 
   /* Make sure that the display opened */
   if (pDisplay == NULL)
@@ -268,9 +277,15 @@ winClipboardProc (void *pvNotUsed)
   g_hwndClipboard = hwnd;
 
   /* Assert ownership of selections if Win32 clipboard is owned */
+#ifdef XWIN_WINIME
+winDebug("call GetClipboardOwner(1)\n");
+#endif
   if (NULL != GetClipboardOwner ())
     {
       /* PRIMARY */
+#ifdef XWIN_WINIME
+winDebug("call XSetSelectionOwner(1)\n");
+#endif
       iReturn = XSetSelectionOwner (pDisplay, XA_PRIMARY,
 				    iWindow, CurrentTime);
       if (iReturn == BadAtom || iReturn == BadWindow ||
@@ -281,6 +296,9 @@ winClipboardProc (void *pvNotUsed)
 	}
 
       /* CLIPBOARD */
+#ifdef XWIN_WINIME
+winDebug("call XSetSelectionOwner(2)\n");
+#endif
       iReturn = XSetSelectionOwner (pDisplay, atomClipboard,
 				    iWindow, CurrentTime);
       if (iReturn == BadAtom || iReturn == BadWindow ||
@@ -345,7 +363,16 @@ winClipboardProc (void *pvNotUsed)
       iSelectError = WSAGetLastError();
 #endif
 
+#ifdef XWIN_WINIME
+      if (iReturn == 0)
+	{
+	  ErrorF ("winClipboardProc - Call to select () failed: %d.\n", iReturn);
+	  continue;
+	}
+      else if (iReturn < 0)
+#else
       if (iReturn < 0)
+#endif
 	{
 #ifndef HAS_WINSOCK
           if (iSelectError == EINTR)
@@ -435,6 +462,7 @@ winClipboardProc (void *pvNotUsed)
   g_iClipboardWindow = None;
   g_pClipboardDisplay = NULL;
   g_hwndClipboard = NULL;
+  XSetIOErrorHandler (NULL);
 
   return NULL;
 }
@@ -474,6 +502,6 @@ winClipboardIOErrorHandler (Display *pDisplay)
 
   /* Restart at the main entry point */
   longjmp (g_jmpEntry, WIN_JMP_ERROR_IO);
-  
+
   return 0;
 }

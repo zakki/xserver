@@ -107,6 +107,27 @@ extern Bool			g_fSilentDupError;
 #ifdef XWIN_CLIPBOARD
 static void
 winClipboardShutdown (void);
+#ifdef XWIN_WINIME
+extern HGLOBAL		g_hText;
+#endif	// #ifdef XWIN_WINIME
+#endif
+
+#ifdef XWIN_WINIME
+static void
+winimeShutdown (void);
+extern pthread_t	g_ptImServerProc;
+extern Bool		g_fIMELaunched;
+extern Bool		g_fIME;
+extern Bool		g_fIMEStarted;
+extern HWND		g_hwndIMMMsgWnd;
+//#define USE_MSGWND
+extern Bool		g_fIMExConnection;
+
+#define USE_WINTHREAD
+extern DWORD			g_ThreadID;
+extern HANDLE			g_ThreadHandle;
+
+extern void freeProcessKeyLists(void);
 #endif
 
 #if defined(DDXOSVERRORF)
@@ -182,9 +203,76 @@ winClipboardShutdown (void)
 
       g_fClipboardLaunched = FALSE;
       g_fClipboardStarted = FALSE;
+#ifdef XWIN_WINIME
+      if (g_hText != NULL)
+      {
+	GlobalFree(g_hText);
+	g_hText = NULL;
+      }
+#endif
 
       winDebug ("winClipboardShutdown - Clipboard thread has exited.\n");
     }
+}
+#endif
+
+#ifdef XWIN_WINIME
+static void
+winimeShutdown (void)
+{
+winDebug("%s(), g_fIME = %d, g_fIMELaunched = %d, g_fIMEStarted = %d\n", __FUNCTION__, g_fIME, g_fIMELaunched, g_fIMEStarted);
+
+    winimeImeOff();
+
+    if ( (g_fIME == TRUE) && (g_fIMELaunched == TRUE) && (g_fIMEStarted == TRUE) )
+    {
+#ifdef USE_MSGWND
+	/* Synchronously destroy the clipboard window */
+	if (g_hwndIMMMsgWnd != NULL)
+	{
+winDebug("%s(), Send WM_DESTROY...\n", __FUNCTION__);
+	    SendMessage (g_hwndIMMMsgWnd, WM_DESTROY, 0, 0);
+//	    PostMessage (g_hwndIMMMsgWnd, WM_DESTROY, 0, 0);
+	    /* NOTE: g_hwndIMMMsgWnd is set to NULL in kinput2.c */
+winDebug("%s(), Send WM_DESTROY... OK\n", __FUNCTION__);
+	} else
+	{
+winDebug("%s(), no msg window found, end.\n", __FUNCTION__);
+	    return;
+	}
+#else
+	g_fIMExConnection = FALSE;
+#endif
+#ifdef USE_WINTHREAD
+	if (g_ThreadHandle != 0)
+	{
+	    // FIXME: TerminateThread は危ない…
+winDebug("%s(), TerminateThread 0x%08X...\n", __FUNCTION__, g_ThreadHandle);
+	    TerminateThread(g_ThreadHandle, FALSE);
+winDebug("%s(), TerminateThread OK\n", __FUNCTION__);
+//	    DeleteAllExtContext();	// これも呼ばないといけないか…
+	    g_fIMEStarted = FALSE;
+	    g_ThreadHandle = 0;
+//	    g_ptImServerProc = 0;
+	    g_fIMELaunched = FALSE;
+	    g_fIMEStarted = FALSE;
+	    freeProcessKeyLists();
+	}
+#else
+	if (g_ptImServerProc != 0)
+	{
+#if 0	// test
+	    sleep(1);
+#else
+	    pthread_join (g_ptImServerProc, NULL);
+#endif
+	    g_ptImServerProc = 0;
+	    g_fIMELaunched = FALSE;
+	    g_fIMEStarted = FALSE;
+	}
+#endif
+    }
+winDebug("%s(), end.\n", __FUNCTION__);
 }
 #endif
 
@@ -202,6 +290,9 @@ ddxBeforeReset (void)
 
 #ifdef XWIN_CLIPBOARD
   winClipboardShutdown ();
+#endif
+#ifdef XWIN_WINIME
+  winimeShutdown();
 #endif
 }
 #endif
@@ -707,7 +798,8 @@ OsVendorInit (void)
   } 
   LogSetParameter (XLOG_FLUSH, 1);
   LogSetParameter (XLOG_VERBOSITY, g_iLogVerbose);
-  LogSetParameter (XLOG_FILE_VERBOSITY, 1);
+  //LogSetParameter (XLOG_FILE_VERBOSITY, 1);
+  LogSetParameter (XLOG_FILE_VERBOSITY, g_iLogVerbose);
 
   /* Log the version information */
   if (serverGeneration == 1)

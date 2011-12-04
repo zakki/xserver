@@ -1,0 +1,22 @@
+#include "../../Kinput2.conf"
+
+             SRCS = \
+		aux_.c \
+		buffer.c \
+		compstr.c \
+		event.c \
+		if.c \
+		key.c \
+		misc.c \
+		segment.c \
+		sysline.c
+
+             OBJS = $(SRCS:%.c=%.o)
+
+   	INCLUDES = -I../../include  -I$(ATOKINCDIR)
+
+          DEFINES =
+
+NormalLibraryObjectRule()
+NormalLibraryTarget(Xatoklib,$(OBJS))
+DependTarget()

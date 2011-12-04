@@ -1,0 +1,28 @@
+/*
+ *	Imakefile for kinput2
+ */
+
+#include "Kinput2.conf"
+
+#ifdef UseWinIME
+#include <Server.tmpl>
+#endif
+
+#define IHaveSubdirs
+#define PassCDebugFlags 'CDEBUGFLAGS=$(CDEBUGFLAGS)'
+
+/*
+ * maybe you should set TOP to make xmkmf work correctly
+ */
+/*     TOP = ../../../xc */
+
+/*
+SUBDIRS = lib cmd ccdef sj3def
+*/
+SUBDIRS = lib cmd
+
+XCOMM for debug...
+XCOMM CDEBUGFLAGS = -g -DDEBUG
+
+MakeSubdirs($(SUBDIRS))
+DependSubdirs($(SUBDIRS))
