@@ -70,7 +70,6 @@
 #define WinIMENotifyMask		(1L << 0)
 
 /* "Kinds" of ControllerNotify events */
-#define WinIMEDummyEvent		-1
 #define WinIMEOpenStatus		0
 #define WinIMEComposition		1
 #define WinIMEStartComposition		2

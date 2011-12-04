@@ -710,14 +710,6 @@ winXIMEXEventHandler (Display * pDisplay, XEvent * event, int ime_event_base, in
 	    }
 		break;
 
-	    case WinIMEDummyEvent:
-	    {
-		TRACE (("WinIMEDummyEvent\n"));
-
-		nRet = -1;
-	    }
-		break;
-
 	    default:
 TRACE(("Other Message\n"));
 

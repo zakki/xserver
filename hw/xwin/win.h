@@ -1499,9 +1499,6 @@ winIMEMessageHandler (HWND hwnd, UINT message,
 		      WPARAM wParam, LPARAM lParam);
 
 int
-winimeSendDummyEvent(void);
-
-int
 winimeImeOff(void);
 
 void

@@ -71,8 +71,6 @@ static char	*rcsid = "$Id: kinput2.c,v 1.46 2002/01/06 15:13:38 ishisone Exp $";
 
 #define WIN_CONNECT_RETRIES			40
 #define WIN_CONNECT_DELAY			4
-extern void*		g_pImServerDpy;
-//extern Window		g_imServerWindow;
 extern Bool		g_fIMEStarted;
 extern Bool		g_fIMExConnection;
 extern unsigned long	serverGeneration;
@@ -396,11 +394,6 @@ initKinput2(const char *display)
 			       options, XtNumber(options),
 			       &ac, av,
 			       fallback_resources, (ArgList)NULL, 0);
-//TRACE(("  initKinput2 - b\n"));
-//    g_pImServerDpy = XtDisplay(toplevel);
-//TRACE(("  initKinput2 - c\n"));
-//    g_imServerWindow = XtWindowOfObject(toplevel);
-//TRACE(("  initKinput2 - d\n"));
 
 #else	// #if 1
     XtToolkitInitialize();
@@ -598,7 +591,6 @@ return 1;
 // >> ※
 #if 1
     pDisplay = XtDisplay(toplevel);
-    g_pImServerDpy = pDisplay;
 TRACE(("    DISPLAY=%s\n", DisplayString(pDisplay)));
 //fprintf(stderr, "display: %s\n", pDisplay->display_name);
 TRACE(("    Call XWinIMEQueryExtension...\n"));	/*YA*/

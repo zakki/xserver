@@ -101,8 +101,6 @@ extern Bool			g_fXdmcpEnabled;
 extern Bool			g_fIMELaunched;
 extern winDispatchProcPtr	winimeProcEstablishConnectionOrig;
 extern winDispatchProcPtr	winimeProcQueryTreeOrig;
-//extern Display*			g_pImServerDpy;
-//extern Window			g_imServerWindow;
 
 extern HWND g_hwndLastKeyPress;
 
@@ -385,27 +383,6 @@ winimeProcEstablishConnection (ClientPtr client)
     return iReturn;
 }
 
-int
-winimeSendDummyEvent(void)
-{
-    winWinIMESendEvent(WinIMEControllerNotify, WinIMENotifyMask, WinIMEDummyEvent, 0, 0, NULL);
-
-    return 1;
-#if 0	// 到着せず
-    XClientMessageEvent ev;
-    Display *dpy = g_pImServerDpy;
-    Window wind = g_imServerWindow;
-
-    ev.display = dpy;
-    ev.window = wind;
-    ev.type = ClientMessage;
-    ev.message_type = XInternAtom(dpy, "_MY_PROTOCOLS", False);
-    ev.format = 32;
-
-    return XSendEvent(dpy, wind, FALSE, NoEventMask, (XEvent*)&ev);
-#endif
-}
-
 #define LOCALEVENT_MAX 4
 
 void
@@ -422,20 +399,6 @@ SendImeKey (void)
   int i;
 
 ErrorF("%s()\n", __FUNCTION__);
-//ErrorF("%s(), display = %d\n", __FUNCTION__, g_pImServerDpy);
-
-#if 0	// XGetModifierMapping()呼ぶと帰って来ないのでいったんやめて決め打ちでやる
-  modmap = XGetModifierMapping(g_pImServerDpy);
-  if (modmap != NULL)
-  {
-    for (i=0; i<8; i++)
-    {
-//	ModKeys[i] = XKeysymToKeycode(g_pImServerDpy, ModKeySyms[i]);
-ErrorF("  ModKeycode[%d] = %d\n", i, modmap->modifiermap[i]);
-    }
-    XFreeModifiermap(modmap);
-  }
-#endif
 
   ZeroMemory (&xCurrentEvent, sizeof (xCurrentEvent));
 
