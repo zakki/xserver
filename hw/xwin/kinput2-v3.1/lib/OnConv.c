@@ -43,10 +43,6 @@ static char *rcsid = "$Id: OnConv.c,v 10.9 1999/05/19 08:52:42 ishisone Exp $";
 #include <stdlib.h>
 typedef unsigned short	wchar;
 #include <X11/extensions/winime.h>
-
-extern long	g_CandPosX;
-extern long	g_CandPosY;
-extern int	g_CandPage;
 #endif
 
 #define DEBUG_VAR debug_OnTheSpotConversion
@@ -922,10 +918,6 @@ TRACE(("OnTheSpot:%s()\n", __FUNCTION__));
 	y = dpyHeight - panel->core.height - 8 - barheight - 20; /* XXX */
     if (y < 0) y = 0;
 #ifdef USE_WINIME
-    g_CandPosX = x;
-    g_CandPosY = y;
-    g_CandPage = listnum;
-
     XWinIMESetCandidateWindow(XtDisplay(ocw), -1, x, y, listnum);
 #else
     MoveShell(shell, x, y);

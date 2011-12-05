@@ -142,9 +142,6 @@ HANDLE			g_ThreadHandle = 0;
 DWORD			g_TriggerKeycode = 0;
 long			g_TriggerModifier = 0;
 //DWORD			g_ModifierList[8];
-long			g_CandPosX = 0;
-long			g_CandPosY = 0;
-int			g_CandPage = 0;
 HWND			g_hwndIMMMsgWnd = NULL;
 Bool			g_fIMExConnection = FALSE;
 
@@ -183,9 +180,6 @@ winInitializeGlobals (void)
   g_fIMEStarted = FALSE;
   g_TriggerKeycode = 0;
   g_TriggerModifier = 0;
-  g_CandPosX = 0;
-  g_CandPosY = 0;
-  g_CandPage = 0;
   g_hwndIMMMsgWnd = NULL;
   g_fIMExConnection = FALSE;
 #endif

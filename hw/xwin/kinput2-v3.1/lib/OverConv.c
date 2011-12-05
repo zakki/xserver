@@ -44,10 +44,6 @@ typedef unsigned short	wchar;
 
 //#define SHOW_MODE
 
-extern long	g_CandPosX;
-extern long	g_CandPosY;
-extern int	g_CandPage;
-
 extern char dispatchException;
 #endif	// #ifdef USE_WINIME
 
@@ -1664,10 +1660,6 @@ TRACE(("...A\n", __FUNCTION__));
 	y = cly + SPOTY(ocw) - panel->core.height - barheight;
 	if (y < 0) y = dpyHeight - panel->core.height - barheight;
     }
-
-    g_CandPosX = x;
-    g_CandPosY = y;
-    g_CandPage = listnum;
 
 #ifdef USE_WINIME
 TRACE(("call XWinIMESetCandidateWindow().\n", __FUNCTION__));

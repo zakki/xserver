@@ -63,10 +63,6 @@ extern DWORD	g_TriggerKeycode;
 extern long	g_TriggerModifier;
 extern void SendImeKey (void);
 
-extern long	g_CandPosX;
-extern long	g_CandPosY;
-extern int	g_CandPage;
-
 static int WinIMEErrorBase;
 
 static DISPATCH_PROC(ProcWinIMEDispatch);
@@ -123,6 +119,10 @@ typedef struct _WIContext {
   wchar_t		*pszClause;	// Add Y.Arai
   BOOL			fActiveStat;	// Y.Arai
   BOOL			fPreeditStart;	// Y.Arai
+
+  int			nCandPosX;
+  int			nCandPosY;
+  int			nCandPage;
 } WIContextRec;
 
 typedef struct _WIClause
@@ -342,6 +342,10 @@ NewContext(void)
 
       pWIC->fActiveStat = FALSE;
       pWIC->fPreeditStart = FALSE;
+
+      pWIC->nCandPosX = 0;
+      pWIC->nCandPosY = 0;
+      pWIC->nCandPage = 0;
 
       /* Add to list. */
       pWIC->pNext = s_pContextList;
@@ -1782,12 +1786,19 @@ ProcWinIMESetCandidateWindow (register ClientPtr client)
     }
 
 winDebug("  x = %d, y = %d, n = %d\n", stuff->x, stuff->y, stuff->n);
+
     form.dwIndex = stuff->n;
     form.dwStyle = CFS_CANDIDATEPOS;
     form.ptCurrentPos.x = stuff->x;
     form.ptCurrentPos.y = stuff->y;
     form.rcArea.left = form.rcArea.top = form.rcArea.right = form.rcArea.bottom = 0;
     CalcCandPos(pWIC->hWnd, &form);
+
+    POINT pt = {form.ptCurrentPos.x, form.ptCurrentPos.y};
+    ClientToScreen(pWIC->hWnd, &pt);
+    pWIC->nCandPosX = pt.x;
+    pWIC->nCandPosY = pt.y;
+    pWIC->nCandPage = stuff->n;
 #if 1
     n = ImmSetCandidateWindow(pWIC->hIMC, &form);
 #endif
@@ -1820,6 +1831,13 @@ winDebug("  x = %d, y = %d, n = %d\n", x, y, n);
     form.ptCurrentPos.y = y;
     form.rcArea.left = form.rcArea.top = form.rcArea.right = form.rcArea.bottom = 0;
     CalcCandPos(pWIC->hWnd, &form);
+
+    POINT pt = {form.ptCurrentPos.x, form.ptCurrentPos.y};
+    ClientToScreen(pWIC->hWnd, &pt);
+    pWIC->nCandPosX = pt.x;
+    pWIC->nCandPosY = pt.y;
+    pWIC->nCandPage = n;
+
     n = ImmSetCandidateWindow(pWIC->hIMC, &form);
 	// 両方やらないといけない
     result = SendMessage(pWIC->hWnd, WM_IME_CONTROL, IMC_SETCANDIDATEPOS, (LPARAM)&form);
@@ -2664,18 +2682,24 @@ winDebug ("  Send WinIMEOpenCand Message...\n");
       if (wParam == IMR_QUERYCHARPOSITION)
       {
 	IMECHARPOSITION* pPos = (IMECHARPOSITION*)lParam;
-winDebug ("  IMR_QUERYCHARPOSITION\n");
-winDebug("  ** CANDPOS ** x = %d, y = %d(, n = %d)\n", g_CandPosX, g_CandPosY, g_CandPage);
-	pPos->dwSize = sizeof(IMECHARPOSITION);
-	pPos->dwCharPos = 0;
-	pPos->pt.x = g_CandPosX;
-	pPos->pt.y = g_CandPosY;
-	pPos->cLineHeight = 10;
-	pPos->rcDocument.left = 10;
-	pPos->rcDocument.top = 10;
-	pPos->rcDocument.bottom = 20;
-	pPos->rcDocument.right = 20;
-	return 1;	// If the application filled the IMECHARPOSITION structure in lParam, return non-zero.
+	HIMC hIMC = ImmGetContext(hwnd);
+	pWIC = FindContext(winHIMCtoContext(hIMC));
+	if (pWIC != NULL)
+	{
+
+	    winDebug ("  IMR_QUERYCHARPOSITION\n");
+	    winDebug("  ** CANDPOS ** x = %d, y = %d(, n = %d)\n", pWIC->nCandPosX, pWIC->nCandPosY, pWIC->nCandPage);
+	    pPos->dwSize = sizeof(IMECHARPOSITION);
+	    pPos->dwCharPos = 0;
+	    pPos->pt.x = pWIC->nCandPosX;
+	    pPos->pt.y = pWIC->nCandPosY;
+	    pPos->cLineHeight = 10;
+	    pPos->rcDocument.left = 10;
+	    pPos->rcDocument.top = 10;
+	    pPos->rcDocument.bottom = 20;
+	    pPos->rcDocument.right = 20;
+	    return 1;	// If the application filled the IMECHARPOSITION structure in lParam, return non-zero.
+	}
       }
 #endif
       break;
