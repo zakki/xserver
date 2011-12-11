@@ -145,8 +145,6 @@ extern WindowPtr *WindowTable;
 
 extern pthread_t			g_ptImServerProc;
 extern volatile char dispatchException;
-extern IMEProcessedKey *g_key_list;
-extern IMEProcessedKey *g_unreg_list;
 
 #define XMALLOC malloc
 
@@ -2411,33 +2409,3 @@ winDebug ("  Send WinIMEOpenCand Message...\n");
 //  return 0;
   return DefWindowProc (hwnd, message, wParam, lParam);
 }
-
-
-
-
-// メモリを開放する
-void
-freeProcessKeyLists(void)
-{
-    IMEProcessedKey *pitem = g_key_list;
-    IMEProcessedKey *pTemp;
-
-    while (pitem != NULL)
-    {
-	pTemp = pitem->next;
-	free(pitem);
-	pitem = pTemp;
-    }
-
-    pitem = g_unreg_list;
-    while (pitem != NULL)
-    {
-	pTemp = pitem->next;
-	free(pitem);
-	pitem = pTemp;
-    }
-
-    g_key_list = NULL;
-    g_unreg_list = NULL;
-}
-

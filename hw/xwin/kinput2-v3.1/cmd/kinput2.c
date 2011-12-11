@@ -233,8 +233,8 @@ static IMEProcessedKey *unreg_list = (IMEProcessedKey *) NULL;
 #else
 #include "../../winimedefs.h"
 
-extern IMEProcessedKey *g_key_list;
-extern IMEProcessedKey *g_unreg_list;
+IMEProcessedKey* g_key_list = NULL;
+IMEProcessedKey* g_unreg_list = NULL;
 #endif
 
 int winim_clients = 0;
@@ -818,6 +818,32 @@ TRACE(("  Found.\n"));
 
 TRACE(("  Not Found.\n"));
     return FALSE;
+}
+
+// メモリを開放する
+void
+freeProcessKeyLists(void)
+{
+    IMEProcessedKey *pitem = g_key_list;
+    IMEProcessedKey *pTemp;
+
+    while (pitem != NULL)
+    {
+	pTemp = pitem->next;
+	free(pitem);
+	pitem = pTemp;
+    }
+
+    pitem = g_unreg_list;
+    while (pitem != NULL)
+    {
+	pTemp = pitem->next;
+	free(pitem);
+	pitem = pTemp;
+    }
+
+    g_key_list = NULL;
+    g_unreg_list = NULL;
 }
 
 #else
