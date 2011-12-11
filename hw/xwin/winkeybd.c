@@ -598,27 +598,26 @@ winKeybdReleaseKeys ()
  */
 
 void
-winSendKeyEvent (DWORD dwKey, Bool fDown)
+winSendKeyEventImpl (DWORD dwKey, Bool fDown, Bool fIme)
 {
   xEvent			xCurrentEvent;
-#ifdef XWIN_WINIME
   CARD32			cur_time;
-#endif
+
   /*
    * When alt-tabing between screens we can get phantom key up messages
    * Here we only pass them through it we think we should!
    */
-#ifdef XWIN_WINIME
-winDebug("%s, keycode = %d, %s\n", __FUNCTION__, dwKey + MIN_KEYCODE, fDown?"True":"False");
   if (g_winKeyState[dwKey] == FALSE && fDown == FALSE)
-  {
-winDebug("skip\n");
-    last_dwKeyCode = dwKey + MIN_KEYCODE;
-    return;
-  }
-#else
-  if (g_winKeyState[dwKey] == FALSE && fDown == FALSE) return;
+    {
+#ifdef XWIN_WINIME
+      if (fIme)
+        {
+	  winDebug("skip\n");
+	  last_dwKeyCode = dwKey + MIN_KEYCODE;
+	}
 #endif
+      return;
+    }
 
   /* Update the keyState map */
   g_winKeyState[dwKey] = fDown;
@@ -626,17 +625,23 @@ winDebug("skip\n");
   ZeroMemory (&xCurrentEvent, sizeof (xCurrentEvent));
 
   xCurrentEvent.u.u.type = fDown ? KeyPress : KeyRelease;
-#ifdef XWIN_WINIME
   cur_time = GetTickCount ();
+#ifdef XWIN_WINIME
   if (cur_time <= LOCALEVENT_MAX)	// LOCALEVENT_MAX
     cur_time = LOCALEVENT_MAX + 1;
+#endif
   xCurrentEvent.u.keyButtonPointer.time =
     g_c32LastInputEventTime = cur_time;
-#else
-  xCurrentEvent.u.keyButtonPointer.time =
-    g_c32LastInputEventTime = GetTickCount ();
-#endif
   xCurrentEvent.u.u.detail = dwKey + MIN_KEYCODE;
+
+#ifdef XWIN_WINIME
+  if (fIme)
+    {
+      /* regist  */
+      if (fDown)
+	regImeProcessKeyList(xCurrentEvent.u.keyButtonPointer.time, xCurrentEvent.u.u.detail);
+    }
+#endif
 
 #if CYGDEBUG
   ErrorF("winSendKeyEvent: xCurrentEvent.u.u.type: %d, xCurrentEvent.u.u.detail: %d\n",
@@ -649,10 +654,10 @@ winDebug("skip\n");
 	mieqEnqueue (pDev, &xCurrentEvent);
 #ifdef XWIN_WINIME
         if (last_dwKeyCode == dwKey + MIN_KEYCODE)
-          {	// ‹t“]‚µ‚Ä‚¢‚é
+	  {	// ‹t“]‚µ‚Ä‚¢‚é
             /* Update the keyState map */
-  ErrorF("winSendKeyEvent reversed\n",
-          xCurrentEvent.u.u.type, xCurrentEvent.u.u.detail);
+	    ErrorF("winSendKeyEvent reversed\n",
+		   xCurrentEvent.u.u.type, xCurrentEvent.u.u.detail);
             g_winKeyState[dwKey] = FALSE;
             
             xCurrentEvent.u.u.type = KeyRelease;
@@ -664,6 +669,12 @@ winDebug("skip\n");
 #ifdef XWIN_WINIME
   last_dwKeyCode = 0;
 #endif
+}
+
+void
+winSendKeyEvent (DWORD dwKey, Bool fDown)
+{
+  winSendKeyEventImpl (dwKey, fDown, FALSE);
 }
 
 BOOL winCheckKeyPressed(WPARAM wParam, LPARAM lParam)
@@ -706,73 +717,6 @@ void winFixShiftKeys (int iScanCode)
 void
 winSendImeKeyEvent (DWORD dwKey, Bool fDown)
 {
-  xEvent			xCurrentEvent;
-  CARD32			cur_time;
-
-//return;
-
-winDebug("%s, keycode = %d, %s\n", __FUNCTION__, dwKey + MIN_KEYCODE, fDown?"True":"False");
-  /*
-   * When alt-tabing between screens we can get phantom key up messages
-   * Here we only pass them through it we think we should!
-   */
-  if (g_winKeyState[dwKey] == FALSE && fDown == FALSE)
-  {
-    last_dwKeyCode = dwKey + MIN_KEYCODE;
-    return;
-  }
-
-  /* Update the keyState map */
-  g_winKeyState[dwKey] = fDown;
-
-  ZeroMemory (&xCurrentEvent, sizeof (xCurrentEvent));
-
-  xCurrentEvent.u.u.type = fDown ? KeyPress : KeyRelease;
-  cur_time = GetTickCount ();
-  if (cur_time <= LOCALEVENT_MAX)	// LOCALEVENT_MAX
-    cur_time = LOCALEVENT_MAX + 1;
-  xCurrentEvent.u.keyButtonPointer.time =
-    g_c32LastInputEventTime = cur_time;
-  xCurrentEvent.u.u.detail = dwKey + MIN_KEYCODE;
-  xCurrentEvent.u.keyButtonPointer.pad1 = 1;	// ‚¿‚å‚Á‚Æ‹­ˆø
-
-  /* regist  */
-  if (fDown)
-    regImeProcessKeyList(xCurrentEvent.u.keyButtonPointer.time, xCurrentEvent.u.u.detail);
-
-#if 0
-  mieqEnqueue (&xCurrentEvent);
-
-  if (last_dwKeyCode == dwKey + MIN_KEYCODE)
-  {	// ‹t“]‚µ‚Ä‚¢‚é
-    /* Update the keyState map */
-    g_winKeyState[dwKey] = FALSE;
-
-    xCurrentEvent.u.u.type = KeyRelease;
-    mieqEnqueue (&xCurrentEvent);
-  }
-#else
-  DeviceIntPtr pDev;
-  for (pDev = inputInfo.devices; pDev; pDev = pDev->next)
-    if ((pDev->coreEvents && pDev != inputInfo.keyboard) && pDev->key)
-      {
-	mieqEnqueue (pDev, &xCurrentEvent);
-#ifdef XWIN_WINIME
-        if (last_dwKeyCode == dwKey + MIN_KEYCODE)
-          {	// ‹t“]‚µ‚Ä‚¢‚é
-            /* Update the keyState map */
-            g_winKeyState[dwKey] = FALSE;
-            
-            xCurrentEvent.u.u.type = KeyRelease;
-            mieqEnqueue (pDev, &xCurrentEvent);
-          }
-
-        last_dwKeyCode = 0;
-#endif
-
-      }
-#endif
-
-  last_dwKeyCode = 0;
+  winSendKeyEventImpl (dwKey, fDown, TRUE);
 }
 #endif
