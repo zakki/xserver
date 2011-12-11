@@ -150,13 +150,6 @@ extern IMEProcessedKey *g_unreg_list;
 
 #define XMALLOC malloc
 
-#ifndef USE_XWIN_FULLEXTENSION
-#define Bool int
-#define Status int
-#define True 1
-#define False 0
-#endif
-
 /*
  * Local helper functions
  *
@@ -958,7 +951,6 @@ ProcWinIMECreateContext(register ClientPtr client)
   return (client->noClientException);
 }
 
-#ifdef USE_XWIN_FULLEXTENSION
 static int
 ProcWinIMESetOpenStatus (register ClientPtr client)
 {
@@ -980,9 +972,7 @@ ProcWinIMESetOpenStatus (register ClientPtr client)
 
   return (client->noClientException);
 }
-#endif
 
-#ifdef USE_XWIN_FULLEXTENSION
 static int
 ProcWinIMESetCompositionWindow (register ClientPtr client)
 {
@@ -1019,9 +1009,7 @@ ProcWinIMESetCompositionWindow (register ClientPtr client)
 
   return (client->noClientException);
 }
-#endif
 
-#ifdef USE_XWIN_FULLEXTENSION
 static int
 ProcWinIMEGetCompositionString (register ClientPtr client)
 {
@@ -1137,73 +1125,7 @@ winDebug("  * WinIMECMPCompAttr *\n");
 
   return (client->noClientException);
 }
-#else
-void* ProcWinIMEGetCompositionString (int context, int index, int *strLength)
-{
-    WIContextPtr pWIC;
-    void* szStr = NULL;
 
-    winDebug ("%s %d\n", __FUNCTION__, context);
-
-    if ((pWIC = FindContext(context)))
-    {
-	switch (index)
-	{
-	    case WinIMECMPCompStr:
-winDebug("  * WinIMECMPCompStr *\n");
-	    {
-		if (pWIC->pszComposition)
-		{
-		    szStr = (void*)(pWIC->pszComposition);
-		    *strLength = wcslen(pWIC->pszComposition) * 2;
-		} else
-		{
-		    winDebug ("no composition result.\n");
-		}
-	    }
-		break;
-	    case WinIMECMPResultStr:
-winDebug("  * WinIMECMPResultStr *\n");
-	    {
-		if (pWIC->pszCompositionResult)
-		{
-		    szStr = (void*)(pWIC->pszCompositionResult);
-		    *strLength = wcslen(pWIC->pszCompositionResult) * 2;
-		} else
-		{
-		    winDebug ("no composition result.\n");
-		}
-	    }
-		break;
-	    case WinIMECMPCompAttr:
-winDebug("  * WinIMECMPCompAttr *\n");
-	    {
-		if (pWIC->pszComposition)
-		{
-		    szStr = pWIC->pAttr;
-		    *strLength = pWIC->nAttr;
-		} else
-		{
-		    winDebug ("no composition result.\n");
-		}
-	    }
-		break;
-	    default:
-	    {
-		winDebug ("bad index.\n");
-	    }
-	}
-    } else
-    {
-	winDebug ("context is not found.\n");
-    }
-
-    return szStr;
-}
-#endif
-
-// >> Add Y.Arai
-#ifdef USE_XWIN_FULLEXTENSION
 static int
 ProcWinIMEGetConversionStatus (register ClientPtr client)
 {
@@ -1316,89 +1238,7 @@ winDebug("pAttr[i](%d) != pLastAttr[i](%d)\n", i, pWIC->pAttr[i], i, pWIC->pLast
 
     return (client->noClientException);
 }
-#else
-Bool
-ProcWinIMEGetConversionStatus (int context, Bool* fopen, DWORD* conversion, DWORD* sentence, Bool* fmodechange)
-{
-    WIContextPtr pWIC;
-    int fOpen = 0;
-    DWORD fdwConversion = 0;
-    DWORD fdwSentence = 0;
-    DWORD fChange = 0;
 
-#if CYGIME_DEBUG
-    winDebug ("%s %d\n", __FUNCTION__, context);
-#endif
-
-    if ((pWIC = FindContext(context)))
-    {
-	BOOL fStatus = ImmGetOpenStatus(pWIC->hIMC);
-	if (fStatus == FALSE)
-	{
-	    winDebug ("no composition result.\n");
-	    fOpen = 0;
-	} else
-	{
-	    if (ImmGetConversionStatus(pWIC->hIMC, &fdwConversion, &fdwSentence) != 0)
-	    {
-		fOpen = 1;
-	    } else
-	    {
-		fOpen = 0;
-		fdwConversion = 0;
-		fdwSentence = 0;
-	    }
-	}
-// >> check mode changed
-	if (pWIC->nLastAttr == 0)
-	{   // 前回は何もない状態
-	    if (pWIC->nAttr == 0)
-		fChange = 0;
-	    else
-	    {
-		if (pWIC->pAttr[0] == ATTR_INPUT)
-		    fChange = 0;
-		else
-		    fChange = 1;
-	    }
-	} else
-	{   // 前回との比較。最初だけでチェックすればＯＫなはず
-	    if (pWIC->nAttr == 0)
-	    {	// 現在の変換文字列がない
-		if (pWIC->pLastAttr[0] == ATTR_INPUT)
-		    fChange = 0;
-		else
-		    fChange = 1;
-	    } else
-	    {	// どっちもある
-		int nCur = ATTR_INPUT, nLast = ATTR_INPUT;
-		if (pWIC->pAttr[0] != ATTR_INPUT)
-		    nCur = ATTR_CONVERTED;
-		if (pWIC->pLastAttr[0] != ATTR_INPUT)
-		    nLast = ATTR_CONVERTED;
-		if (nCur == nLast)
-		    fChange = 0;
-		else
-		    fChange = 1;
-	    }
-	}
-// << check mode changed
-    } else
-    {
-        winDebug ("context is not found.\n");
-        return False;
-    }
-
-    *fopen = fOpen;
-    *conversion = fdwConversion;
-    *sentence = fdwSentence;
-    *fmodechange = fChange;
-
-    return True;
-}
-#endif
-
-#ifdef USE_XWIN_FULLEXTENSION
 static int
 ProcWinIMEGetOpenStatus (register ClientPtr client)
 {
@@ -1457,9 +1297,7 @@ winDebug ("  call ImmGetConversionStatus()\n");
 
     return (client->noClientException);
 }
-#endif
 
-#ifdef USE_XWIN_FULLEXTENSION
 static int
 ProcWinIMEGetTargetClause (register ClientPtr client)
 {
@@ -1515,47 +1353,7 @@ winDebug ("  bytes = %d, num = %d, cur = %d\n", rep.bytes, rep.numchar, rep.curC
 
     return (client->noClientException);
 }
-#else
-void *
-ProcWinIMEGetTargetClause (int context, int target, int *attr, int *bytes, int *numchar, int *curClause)
-{
-    WIContextPtr pWIC;
-    int len;
-    void* szStr = NULL;
 
-    winDebug ("%s %d (target = %d)\n", __FUNCTION__, context, target);
-
-    if ((pWIC = FindContext(context)))
-    {
-	if (pWIC->pszComposition)
-	{
-	    wchar_t *pszClause;
-	    int nAttr;
-	    pszClause = GetTargetClause(pWIC, target, &nAttr, &len);
-	    if (pszClause != NULL)
-	    {
-		szStr = (void*)pszClause;
-		len = wcslen(pszClause) * 2;
-		*bytes = len;
-		*numchar = len / 2;
-		*attr = nAttr;
-		*curClause = pWIC->nCurClause;
-winDebug ("  bytes = %d, num = %d, cur = %d\n", *bytes, *numchar, *curClause);
-	    }
-	} else
-	{
-	    winDebug ("no composition result.\n");
-	}
-    } else
-    {
-        winDebug ("context is not found.\n");
-    }
-
-    return szStr;
-}
-#endif
-
-#ifdef USE_XWIN_FULLEXTENSION
 static int
 ProcWinIMEGetTargetString (register ClientPtr client)
 {
@@ -1614,44 +1412,7 @@ ProcWinIMEGetTargetString (register ClientPtr client)
 
     return (client->noClientException);
 }
-#else
-void *
-ProcWinIMEGetTargetString (int context, int target, int offset, int *bytes, int *numchar)
-{
-    WIContextPtr pWIC;
-    int len;
-    void* szStr = NULL;
 
-    winDebug ("%s %d\n", __FUNCTION__, context);
-
-    if ((pWIC = FindContext(context)))
-    {
-	if (pWIC->pszComposition)
-	{
-	    wchar_t *pszClause;
-
-	    pszClause = GetTargetString(pWIC, target, offset);
-	    if (pszClause != NULL)
-	    {
-		szStr = (void*)pszClause;
-		len = wcslen(pszClause) * 2;
-		*bytes = len;
-		*numchar = len / 2;
-	    }
-	} else
-	{
-	    winDebug ("no composition result.\n");
-	}
-    } else
-    {
-        winDebug ("context is not found.\n");
-    }
-
-    return szStr;
-}
-#endif
-
-#ifdef USE_XWIN_FULLEXTENSION
 static int
 ProcWinIMEGetLastContext(register ClientPtr client)
 {
@@ -1682,7 +1443,6 @@ ProcWinIMEGetLastContext(register ClientPtr client)
     WriteToClient(client, sizeof(xWinIMEGetLastContextReply), (char *)&rep);
     return (client->noClientException);
 }
-#endif
 
 static int
 ProcWinIMEClearContext (register ClientPtr client)
@@ -1764,7 +1524,6 @@ static void CalcCandPos(HWND hWnd, CANDIDATEFORM *pForm)
     }
 }
 
-#ifdef USE_XWIN_FULLEXTENSION
 static int
 ProcWinIMESetCandidateWindow (register ClientPtr client)
 {
@@ -1808,43 +1567,6 @@ winDebug("  x = %d, y = %d, n = %d\n", stuff->x, stuff->y, stuff->n);
 
     return (client->noClientException);
 }
-#else
-int
-ProcWinIMESetCandidateWindow (int context, int x, int y, int n)
-{
-    WIContextPtr pWIC;
-    CANDIDATEFORM form;
-    LRESULT result;
-    int n;
-
-    winDebug ("%s\n", __FUNCTION__);
-
-    if (!(pWIC = FindContext(context)))
-    {
-	return 0;
-    }
-
-winDebug("  x = %d, y = %d, n = %d\n", x, y, n);
-    form.dwIndex = n;
-    form.dwStyle = CFS_CANDIDATEPOS;
-    form.ptCurrentPos.x = x;
-    form.ptCurrentPos.y = y;
-    form.rcArea.left = form.rcArea.top = form.rcArea.right = form.rcArea.bottom = 0;
-    CalcCandPos(pWIC->hWnd, &form);
-
-    POINT pt = {form.ptCurrentPos.x, form.ptCurrentPos.y};
-    ClientToScreen(pWIC->hWnd, &pt);
-    pWIC->nCandPosX = pt.x;
-    pWIC->nCandPosY = pt.y;
-    pWIC->nCandPage = n;
-
-    n = ImmSetCandidateWindow(pWIC->hIMC, &form);
-	// 両方やらないといけない
-    result = SendMessage(pWIC->hWnd, WM_IME_CONTROL, IMC_SETCANDIDATEPOS, (LPARAM)&form);
-
-    return 1;
-}
-#endif
 
 static int
 ProcWinIMEDestroyContext (register ClientPtr client)
@@ -1961,7 +1683,6 @@ winDebug("  prev hIMC is not NULL(%lX).\n", hOldIMC);
   return (client->noClientException);
 }
 
-#ifdef USE_XWIN_FULLEXTENSION
 static int
 ProcWinIMESetCompositionDraw (register ClientPtr client)
 {
@@ -1983,9 +1704,7 @@ ProcWinIMESetCompositionDraw (register ClientPtr client)
 
   return (client->noClientException);
 }
-#endif
 
-#ifdef USE_XWIN_FULLEXTENSION
 static int
 ProcWinIMEGetCursorPosition(register ClientPtr client)
 {
@@ -2018,29 +1737,6 @@ winDebug ("nCursor: %d, nNumClause: %d, nCurClause: %d, nOffset: %d\n", rep.curs
   WriteToClient(client, sizeof(xWinIMEGetCursorPositionReply), (char *)&rep);
   return (client->noClientException);
 }
-#else
-Bool
-ProcWinIMEGetCursorPosition(int context, int *cursor, int *numClause, int *curClause, int *offset)
-{
-    WIContextPtr pWIC;
-#if CYGIME_DEBUG
-    winDebug ("%s: (context %d)\n", __FUNCTION__, context);
-#endif
-
-    if (!(pWIC = FindContext(context)))
-    {
-	return False;
-    }
-
-    *cursor = pWIC->nCursor;
-    *numClause = pWIC->nNumClause;
-    *curClause = pWIC->nCurClause;
-    *offset = pWIC->nOffset;
-
-winDebug ("nCursor: %d, nNumClause: %d, nCurClause: %d, nOffset: %d\n", *cursor, *numClause, *curClause, *offset);
-    return True;
-}
-#endif
 
 /*
  * deliver the event
@@ -2108,7 +1804,6 @@ ProcWinIMEDispatch (register ClientPtr client)
       return ProcWinIMECreateContext (client);
     case X_WinIMESetFocus:
       return ProcWinIMESetFocus (client);
-#ifdef USE_XWIN_FULLEXTENSION
     case X_WinIMESetOpenStatus:
       return ProcWinIMESetOpenStatus (client);
     case X_WinIMESetCompositionWindow:
@@ -2119,7 +1814,6 @@ ProcWinIMEDispatch (register ClientPtr client)
       return ProcWinIMESetCompositionDraw (client);
     case X_WinIMEGetCursorPosition:
       return ProcWinIMEGetCursorPosition (client);
-// >> Add Y.Arai
     case X_WinIMEGetConversionStatus:
       return ProcWinIMEGetConversionStatus (client);
     case X_WinIMEGetOpenStatus:
@@ -2132,7 +1826,6 @@ ProcWinIMEDispatch (register ClientPtr client)
       return ProcWinIMEGetTargetString (client);
     case X_WinIMESetCandidateWindow:
       return ProcWinIMESetCandidateWindow (client);
-#endif
     case X_WinIMEClearContext:
       return ProcWinIMEClearContext (client);
     case X_WinIMEDestroyContext:

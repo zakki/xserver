@@ -26,6 +26,7 @@
  *from Kensuke Matsuzaki.
  *
  * Authors:	Kensuke Matsuzaki <zakki@peppermint.jp>
+ *		Y.Arai
  */
 
 /* THIS IS NOT AN X CONSORTIUM STANDARD */
@@ -35,15 +36,8 @@
 #define NEED_EVENTS
 #define NEED_REPLIES
 
-#define USE_XWIN_FULLEXTENSION
-
-//#ifndef DWORD
-//typedef unsigned int DWORD, *LPDWORD;
-//#endif
-
 #include <X11/Xlibint.h>
 
-// >> Add Y.Arai
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
@@ -57,7 +51,6 @@
 #undef XFree86Server
 
 typedef unsigned short	wchar;
-// << Add Y.Arai
 
 #include "winimestr.h"
 #include <X11/extensions/Xext.h>
@@ -83,8 +76,6 @@ static int nCurContext = -1;
 #define MyErrorF
 #endif
 
-#ifdef USE_XWIN_FULLEXTENSION
-// >> 
 /*
  * ICString.attr の値
  */
@@ -100,7 +91,6 @@ static int nCurContext = -1;
 /* 2. それ以外、例えば現在の入力モードなどを表している時 (常にこの値) */
 #define ICAttrNormalString	(-1)
 // << 
-#endif
 
 #define CHECK_XWIN_STAT
 #ifdef CHECK_XWIN_STAT
@@ -160,8 +150,8 @@ wire_to_event (Display *dpy, XEvent  *re, xEvent  *event)
       se->time = sevent->time;
       se->kind = sevent->kind;
       se->arg = sevent->arg;
-      se->window = sevent->window;	// Add Y.Arai
-      se->hwnd = sevent->hwnd;	// Add Y.Arai
+      se->window = sevent->window;
+      se->hwnd = sevent->hwnd;
       return True;
     }
   return False;
@@ -187,14 +177,13 @@ event_to_wire (Display *dpy, XEvent  *re, xEvent  *event)
       sevent->kind = se->kind;
       sevent->arg = se->arg;
       sevent->time = se->time;
-      sevent->window = se->window;	// Add Y.Arai
-      sevent->hwnd = se->hwnd;	// Add Y.Arai
+      sevent->window = se->window;
+      sevent->hwnd = se->hwnd;
       return 1;
   }
   return 0;
 }
 
-#ifdef USE_XWIN_FULLEXTENSION
 // Xatoklibから借用
 /*
  * [関数名]
@@ -395,7 +384,6 @@ MyErrorF("WinIME:UCS2toWideChar(%d Bytes)\n", nSize);
 	return nLen;
     }
 }
-#endif
 
 static Status
 Wrap_XReply (
@@ -547,7 +535,6 @@ XWinIMECreateContext (Display* dpy, int* context)
   return True;
 }
 
-#ifdef USE_XWIN_FULLEXTENSION
 Bool
 XWinIMESetOpenStatus (Display* dpy, int context, Bool state)
 {
@@ -576,9 +563,7 @@ XWinIMESetOpenStatus (Display* dpy, int context, Bool state)
 
   return True;
 }
-#endif
 
-#ifdef USE_XWIN_FULLEXTENSION
 Bool
 XWinIMESetCompositionWindow (Display* dpy, int context,
 			     int style,
@@ -616,9 +601,7 @@ XWinIMESetCompositionWindow (Display* dpy, int context,
   TRACE("SetCompositionWindow... return True");
   return True;
 }
-#endif
 
-#ifdef USE_XWIN_FULLEXTENSION
 // UCS2で持つようにしたので対応 Y.Arai
 // 渡す文字列のフォーマットを、Compound Text から WideChar に変更
 // 戻り値: 文字数
@@ -682,7 +665,6 @@ XWinIMEGetCompositionString (Display *dpy, int context,
 
   return nLen;
 }
-#endif
 
 // これは正しいcontext必須
 Bool
@@ -720,7 +702,6 @@ MyErrorF("  nCurContext = %d\n", context);
   return True;
 }
 
-#ifdef USE_XWIN_FULLEXTENSION
 Bool
 XWinIMESetCompositionDraw (Display* dpy, int context, Bool draw)
 {
@@ -751,9 +732,7 @@ XWinIMESetCompositionDraw (Display* dpy, int context, Bool draw)
 
   return True;
 }
-#endif
 
-#ifdef USE_XWIN_FULLEXTENSION
 Bool
 XWinIMEGetCursorPosition (Display* dpy, int context, int *cursor, int *numClause, int *curClause, int *offset)
 {
@@ -789,19 +768,16 @@ TRACE("  *D*");
     }
 TRACE("  *E*");
   *cursor = rep.cursor;
-  *numClause = rep.numClause;	// Y.Arai
-  *curClause = rep.curClause;	// Y.Arai
-  *offset = rep.offset;		// Y.Arai
+  *numClause = rep.numClause;
+  *curClause = rep.curClause;
+  *offset = rep.offset;
   UnlockDisplay(dpy);
 TRACE("  *F*");
   SyncHandle();
   TRACE("GetCursorPosition... return True");
   return True;
 }
-#endif
 
-#ifdef USE_XWIN_FULLEXTENSION
-// >> Add Y.Arai
 Bool
 XWinIMEGetConversionStatus (Display *dpy, int context, Bool* fopen, DWORD* conversion, DWORD* sentence, Bool* fmodify)
 {
@@ -850,9 +826,7 @@ TRACE("  *F*");
 
     return True;
 }
-#endif
 
-#ifdef USE_XWIN_FULLEXTENSION
 Bool
 XWinIMEGetOpenStatus (Display* dpy, int context, Bool* fopen)
 {
@@ -888,9 +862,7 @@ XWinIMEGetOpenStatus (Display* dpy, int context, Bool* fopen)
     TRACE("GetOpenStatus... return True");
     return True;
 }
-#endif
 
-#ifdef USE_XWIN_FULLEXTENSION
 // GetCompositionStringと違い、UCS-2で受け渡しすることにする
 /// UCS-2はやめ、WideCharでやる
 // 戻り値: 文字数
@@ -1015,9 +987,7 @@ TRACE("  *H*");
 
     return nLen;
 }
-#endif
 
-#ifdef USE_XWIN_FULLEXTENSION
 // 指定されたtargetのoffset以降、全編集文字列の最後まで返す
 // offset: 文字数
 // 戻り値: 文字数
@@ -1084,7 +1054,6 @@ XWinIMEGetTargetString (Display *dpy,
 
     return nLen;
 }
-#endif
 
 // 最後にアクティブになったcontextを返す
 Bool
@@ -1166,7 +1135,6 @@ XWinIMEClearContext (Display* dpy, int context, BOOL *fmodify)
     return True;
 }
 
-#ifdef USE_XWIN_FULLEXTENSION
 Bool
 XWinIMESetCandidateWindow (Display *dpy, int context, int x, int y, int listnum)
 {
@@ -1196,9 +1164,7 @@ XWinIMESetCandidateWindow (Display *dpy, int context, int x, int y, int listnum)
     TRACE("IMESetCandidateWindow... return True");
     return True;
 }
-#endif
 
-#ifdef USE_XWIN_FULLEXTENSION
 Bool
 XWinIMEStartIME (Display *dpy, int context)
 {
@@ -1225,7 +1191,6 @@ XWinIMEStartIME (Display *dpy, int context)
     TRACE("IMEStartIME... return True");
     return True;
 }
-#endif
 
 Bool
 XWinIMEDestroyContext (Display *dpy, int context)
@@ -1253,4 +1218,3 @@ XWinIMEDestroyContext (Display *dpy, int context)
     TRACE("IMEDestroyContext... return True");
     return True;
 }
-// << Add Y.Arai

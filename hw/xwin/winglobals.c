@@ -143,7 +143,6 @@ DWORD			g_TriggerKeycode = 0;
 long			g_TriggerModifier = 0;
 //DWORD			g_ModifierList[8];
 HWND			g_hwndIMMMsgWnd = NULL;
-Bool			g_fIMExConnection = FALSE;
 
 IMEProcessedKey*	g_key_list = NULL;
 IMEProcessedKey*	g_unreg_list = NULL;
@@ -181,6 +180,5 @@ winInitializeGlobals (void)
   g_TriggerKeycode = 0;
   g_TriggerModifier = 0;
   g_hwndIMMMsgWnd = NULL;
-  g_fIMExConnection = FALSE;
 #endif
 }

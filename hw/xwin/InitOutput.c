@@ -120,8 +120,6 @@ extern Bool		g_fIMELaunched;
 extern Bool		g_fIME;
 extern Bool		g_fIMEStarted;
 extern HWND		g_hwndIMMMsgWnd;
-//#define USE_MSGWND
-extern Bool		g_fIMExConnection;
 
 #define USE_WINTHREAD
 extern DWORD			g_ThreadID;
@@ -226,23 +224,6 @@ winDebug("%s(), g_fIME = %d, g_fIMELaunched = %d, g_fIMEStarted = %d\n", __FUNCT
 
     if ( (g_fIME == TRUE) && (g_fIMELaunched == TRUE) && (g_fIMEStarted == TRUE) )
     {
-#ifdef USE_MSGWND
-	/* Synchronously destroy the clipboard window */
-	if (g_hwndIMMMsgWnd != NULL)
-	{
-winDebug("%s(), Send WM_DESTROY...\n", __FUNCTION__);
-	    SendMessage (g_hwndIMMMsgWnd, WM_DESTROY, 0, 0);
-//	    PostMessage (g_hwndIMMMsgWnd, WM_DESTROY, 0, 0);
-	    /* NOTE: g_hwndIMMMsgWnd is set to NULL in kinput2.c */
-winDebug("%s(), Send WM_DESTROY... OK\n", __FUNCTION__);
-	} else
-	{
-winDebug("%s(), no msg window found, end.\n", __FUNCTION__);
-	    return;
-	}
-#else
-	g_fIMExConnection = FALSE;
-#endif
 #ifdef USE_WINTHREAD
 	if (g_ThreadHandle != 0)
 	{
@@ -261,11 +242,7 @@ winDebug("%s(), TerminateThread OK\n", __FUNCTION__);
 #else
 	if (g_ptImServerProc != 0)
 	{
-#if 0	// test
-	    sleep(1);
-#else
 	    pthread_join (g_ptImServerProc, NULL);
-#endif
 	    g_ptImServerProc = 0;
 	    g_fIMELaunched = FALSE;
 	    g_fIMEStarted = FALSE;

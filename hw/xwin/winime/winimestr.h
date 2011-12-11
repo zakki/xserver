@@ -26,6 +26,7 @@
  *from Kensuke Matsuzaki.
  *
  * Authors:	Kensuke Matsuzaki <zakki@peppermint.jp>
+ *		Y.Arai
  */
 
 #ifndef _WINIMESTR_H_
@@ -106,7 +107,6 @@ typedef struct {
 } xWinIMECreateContextReply;
 #define sz_xWinIMECreateContextReply	32
 
-#ifdef USE_XWIN_FULLEXTENSION
 typedef struct _WinIMESetOpenStetus {
     CARD8	reqType;		/* always IMEReqCode */
     CARD8	imeReqType;		/* always X_IMEOpenStatus */
@@ -115,9 +115,7 @@ typedef struct _WinIMESetOpenStetus {
     CARD32	state B32;
 } xWinIMESetOpenStatusReq;
 #define sz_xWinIMESetOpenStatusReq	12
-#endif
 
-#ifdef USE_XWIN_FULLEXTENSION
 typedef struct _WinIMESetCompositionWindow {
     CARD8	reqType;		/* always IMEReqCode */
     CARD8	imeReqType;		/* always X_IMESetCompositionPoint */
@@ -130,9 +128,7 @@ typedef struct _WinIMESetCompositionWindow {
     INT16	ih B16;
 } xWinIMESetCompositionWindowReq;
 #define sz_xWinIMESetCompositionWindowReq	20
-#endif
 
-#ifdef USE_XWIN_FULLEXTENSION
 typedef struct _WinIMEGetCompositionString {
     CARD8	reqType;		/* always IMEReqCode */
     CARD8	imeReqType;		/* always X_IMEGetCompositionString */
@@ -157,7 +153,6 @@ typedef struct {
     CARD32 pad7 B32;
 } xWinIMEGetCompositionStringReply;
 #define sz_xWinIMEGetCompositionStringReply	32
-#endif
 
 typedef struct _WinIMESetFocus {
     CARD8	reqType;		/* always IMEReqCode */
@@ -169,7 +164,6 @@ typedef struct _WinIMESetFocus {
 } xWinIMESetFocusReq;
 #define sz_xWinIMESetFocusReq	16
 
-#ifdef USE_XWIN_FULLEXTENSION
 typedef struct _WinIMESetCompositionDraw {
     CARD8	reqType;		/* always IMEReqCode */
     CARD8	imeReqType;		/* always X_IMESetCompositionDraw */
@@ -178,9 +172,7 @@ typedef struct _WinIMESetCompositionDraw {
     CARD32	draw B32;
 } xWinIMESetCompositionDrawReq;
 #define sz_xWinIMESetCompositionDrawReq	12
-#endif
 
-#ifdef USE_XWIN_FULLEXTENSION
 typedef struct _WinIMEGetCursorPosition {
     CARD8	reqType;		/* always IMEReqCode */
     CARD8	imeReqType;		/* always X_WinIMEGetCursorPosition */
@@ -202,10 +194,7 @@ typedef struct {
     CARD32	pad6 B32;
 } xWinIMEGetCursorPositionReply;
 #define sz_xWinIMEGetCursorPositionReply	32
-#endif
 
-// >> Add Y.Arai
-#ifdef USE_XWIN_FULLEXTENSION
 typedef struct _WinIMEGetConversionStatus {
     CARD8	reqType;		/* always IMEReqCode */
     CARD8	imeReqType;		/* always X_IMEGetConversionStatus */
@@ -228,9 +217,7 @@ typedef struct {
     CARD32	pad6 B32;
 } xWinIMEGetConversionStatusReply;
 #define sz_xWinIMEGetConversionStatusReply	32
-#endif
 
-#ifdef USE_XWIN_FULLEXTENSION
 typedef struct _WinIMEGetTargetClause {
     CARD8	reqType;		/* always IMEReqCode */
     CARD8	imeReqType;		/* always X_IMEGetTargetClause */
@@ -254,9 +241,7 @@ typedef struct {
     CARD32	pad7 B32;
 } xWinIMEGetTargetClauseReply;
 #define sz_xWinIMEGetTargetClauseReply	32
-#endif
 
-#ifdef USE_XWIN_FULLEXTENSION
 typedef struct _WinIMEGetLastContext {
     CARD8	reqType;		/* always IMEReqCode */
     CARD8	imeReqType;		/* always X_WinIMEGetLastContext */
@@ -278,7 +263,6 @@ typedef struct {
     CARD32	pad6 B32;
 } xWinIMEGetLastContextReply;
 #define sz_xWinIMEGetLastContextReply	32
-#endif
 
 typedef struct _WinIMEClearContext {
     CARD8	reqType;		/* always IMEReqCode */
@@ -302,7 +286,6 @@ typedef struct {
 } xWinIMEClearContextReply;
 #define sz_xWinIMEClearContextReply	32
 
-#ifdef USE_XWIN_FULLEXTENSION
 typedef struct _WinIMEGetTargetString {
     CARD8	reqType;		/* always IMEReqCode */
     CARD8	imeReqType;		/* always X_IMEGetTargetString */
@@ -326,9 +309,7 @@ typedef struct {
     CARD32	pad7 B32;
 } xWinIMEGetTargetStringReply;
 #define sz_xWinIMEGetTargetStringReply	32
-#endif
 
-#ifdef USE_XWIN_FULLEXTENSION
 typedef struct _WinIMESetCandidateWindow {
     CARD8	reqType;		/* always IMEReqCode */
     CARD8	imeReqType;		/* always X_IMESetCandidateWindow */
@@ -339,9 +320,7 @@ typedef struct _WinIMESetCandidateWindow {
     CARD32	n B32;
 } xWinIMESetCandidateWindowReq;
 #define sz_xWinIMESetCandidateWindowReq	20
-#endif
 
-#ifdef USE_XWIN_FULLEXTENSION
 typedef struct _WinIMEStartIME {
     CARD8	reqType;		/* always IMEReqCode */
     CARD8	imeReqType;		/* always X_WinIMEStartIME */
@@ -349,9 +328,7 @@ typedef struct _WinIMEStartIME {
     CARD32	context B32;		/* input context */
 } xWinIMEStartIMEReq;
 #define sz_xWinIMEStartIMEReq	8
-#endif
 
-#ifdef USE_XWIN_FULLEXTENSION
 typedef struct _WinIMEGetOpenStatus {
     CARD8	reqType;		/* always IMEReqCode */
     CARD8	imeReqType;		/* always X_IMEGetOpenStatus */
@@ -374,7 +351,6 @@ typedef struct {
     CARD32	pad6 B32;
 } xWinIMEGetOpenStatusReply;
 #define sz_xWinIMEGetOpenStatusReply	32
-#endif
 
 typedef struct _WinIMEDestroyContext {
     CARD8	reqType;		/* always IMEReqCode */
@@ -383,6 +359,5 @@ typedef struct _WinIMEDestroyContext {
     CARD32	context B32;		/* input context */
 } xWinIMEDestroyContextReq;
 #define sz_xWinIMEDestroyContextReq	8
-// << Add Y.Arai
 
 #endif /* _WINIMESTR_H_ */

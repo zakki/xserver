@@ -1505,21 +1505,6 @@ void
 freeProcessKeyLists(void);
 
 /*
- * winimserver.c
- */
-#ifndef USE_XWIN_FULLEXTENSION
-int XWinIMEGetCompositionString (void *dpy, int context, int index, int count, wchar_t* str_return);
-Bool XWinIMEGetCursorPosition (void* dpy, int context, int *cursor, int *numClause, int *curClause, int *offset);
-Bool XWinIMEGetConversionStatus (void *dpy, int context, Bool* fopen, DWORD* conversion, DWORD* sentence, Bool* fmodify);
-int XWinIMEGetTargetClause (void *dpy, int context, int target, wchar_t *data, int *attr);
-int XWinIMEGetTargetString (void *dpy, int context, int target, int offset, wchar_t *data);
-Bool XWinIMESetCandidateWindow (void *dpy, int context, int x, int y, int listnum);
-#endif
-
-///Bool
-///winInitImServer ();
-
-/*
  * kinput2.c
  */
 int

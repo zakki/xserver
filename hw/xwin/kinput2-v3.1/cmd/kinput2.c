@@ -72,7 +72,6 @@ static char	*rcsid = "$Id: kinput2.c,v 1.46 2002/01/06 15:13:38 ishisone Exp $";
 #define WIN_CONNECT_RETRIES			40
 #define WIN_CONNECT_DELAY			4
 extern Bool		g_fIMEStarted;
-extern Bool		g_fIMExConnection;
 extern unsigned long	serverGeneration;
 
 extern char dispatchException;

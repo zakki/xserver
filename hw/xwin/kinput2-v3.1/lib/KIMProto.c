@@ -60,7 +60,6 @@ static char *rcsid = "$Id: IMProto.c,v 1.20 1999/04/12 08:52:23 ishisone Exp $";
 
 extern unsigned int	g_TriggerKeycode;
 extern long	g_TriggerModifier;
-extern Bool	g_fIMExConnection;
 #endif
 /*- resource table -*/
 static XtResource resources[] = {
@@ -364,9 +363,6 @@ TRACE(("server_name = %s\n", ipw->imp.server_name));
 	TRACE(("call XtAddEventHandler for X transport\n"));
 	XtAddEventHandler(new, NoEventMask, True, acceptXService,
 			  (XtPointer)NULL);
-#ifdef USE_WINIME
-	g_fIMExConnection = TRUE;
-#endif
     }
 #endif /* IM_X_TRANSPORT */
 

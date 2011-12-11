@@ -26,14 +26,11 @@
  *from Kensuke Matsuzaki.
  *
  * Authors:	Kensuke Matsuzaki <zakki@peppermint.jp>
+ *		Y.Arai
  */
 
 #ifndef _WINIME_H_
 #define _WINIME_H_
-
-#ifndef USE_XWIN_FULLEXTENSION
-#define USE_XWIN_FULLEXTENSION
-#endif
 
 #include <X11/Xfuncproto.h>
 
@@ -41,14 +38,10 @@
 #define X_WinIMESelectInput		 1
 #define X_WinIMECreateContext		 2
 #define X_WinIMESetFocus		 6
-// >> Add Y.Arai
-/* 必ずしもImmXXX系のAPIと１対１対応ではないので注意 */
 #define X_WinIMEGetLastContext		12
 #define X_WinIMEClearContext		13
 #define X_WinIMEDestroyContext		17
-// << Add Y.Arai
 
-#ifdef USE_XWIN_FULLEXTENSION
 #define X_WinIMESetOpenStatus		 3
 #define X_WinIMESetCompositionWindow	 4
 #define X_WinIMEGetCompositionString	 5
@@ -60,7 +53,6 @@
 #define X_WinIMEGetTargetString		14
 #define X_WinIMESetCandidateWindow	15
 #define X_WinIMEStartIME		16
-#endif
 
 /* Events */
 #define WinIMEControllerNotify		0
@@ -120,7 +112,7 @@ typedef struct {
   Time time;		/* server timestamp when event happened */
   int kind;		/* subtype of event */
   int arg;
-  Window window;	// Add Y.Arai
+  Window window;
   HWND hwnd;
 } XWinIMENotifyEvent;
 
@@ -138,14 +130,11 @@ Bool XWinIMECreateContext (Display *dpy, int* context);
 Bool XWinIMESetFocus (Display *dpy, int context, Bool focus, Window window);
 
 
-// >> Add Y.Arai
 /* 必ずしもImmXXX系のAPIと１対１対応ではないので注意 */
 Bool XWinIMEGetLastContext (Display *dpy, int* context);
 Bool XWinIMEClearContext (Display *dpy, int context, BOOL *fmodify);
 Bool XWinIMEDestroyContext (Display *dpy, int context);
-// << Add Y.Arai
 
-#ifdef USE_XWIN_FULLEXTENSION
 Bool XWinIMESetOpenStatus (Display *dpy, int context, Bool state);
 Bool XWinIMESetCompositionWindow (Display *dpy, int context,
 				  int style,

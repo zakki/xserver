@@ -40,7 +40,6 @@ static char *rcsid = "$Id: imxport.c,v 1.11 1999/05/04 05:44:11 ishisone Exp $";
 extern int errno;
 
 #ifdef USE_WINIME
-extern Bool		g_fIMExConnection;
 extern char dispatchException;
 #endif
 
@@ -417,7 +416,6 @@ IMConnection *conn;
     MyRemoveAllEventHandler(dpy, conn->transport.priv.x.server);
 #ifdef USE_WINIME
 TRACE(("xShutdown(): conn->transport.priv.x.client = %08lx, conn->transport.priv.x.server = %08lx\n", conn->transport.priv.x.client, conn->transport.priv.x.server));
-//    g_fIMExConnection = FALSE;
 #endif
     XDestroyWindow(dpy, conn->transport.priv.x.server);
 }
