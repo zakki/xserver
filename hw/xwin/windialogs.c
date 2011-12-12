@@ -106,9 +106,6 @@ winDrawURLWindow (LPARAM lParam)
   COLORREF crText;
   
   draw = (DRAWITEMSTRUCT *) lParam;
-#ifdef XWIN_WINIME
-winDebug("call GetWindowText(1)\n");
-#endif
   GetWindowText (draw->hwndItem, str, sizeof(str));
   str[255] = 0;
   GetClientRect (draw->hwndItem, &rect);

@@ -277,15 +277,9 @@ winClipboardProc (void *pvNotUsed)
   g_hwndClipboard = hwnd;
 
   /* Assert ownership of selections if Win32 clipboard is owned */
-#ifdef XWIN_WINIME
-winDebug("call GetClipboardOwner(1)\n");
-#endif
   if (NULL != GetClipboardOwner ())
     {
       /* PRIMARY */
-#ifdef XWIN_WINIME
-winDebug("call XSetSelectionOwner(1)\n");
-#endif
       iReturn = XSetSelectionOwner (pDisplay, XA_PRIMARY,
 				    iWindow, CurrentTime);
       if (iReturn == BadAtom || iReturn == BadWindow ||
@@ -296,9 +290,6 @@ winDebug("call XSetSelectionOwner(1)\n");
 	}
 
       /* CLIPBOARD */
-#ifdef XWIN_WINIME
-winDebug("call XSetSelectionOwner(2)\n");
-#endif
       iReturn = XSetSelectionOwner (pDisplay, atomClipboard,
 				    iWindow, CurrentTime);
       if (iReturn == BadAtom || iReturn == BadWindow ||
@@ -502,6 +493,6 @@ winClipboardIOErrorHandler (Display *pDisplay)
 
   /* Restart at the main entry point */
   longjmp (g_jmpEntry, WIN_JMP_ERROR_IO);
-
+  
   return 0;
 }

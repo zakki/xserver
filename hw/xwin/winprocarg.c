@@ -1393,7 +1393,6 @@ ddxProcessArgument (int argc, char *argv[], int i)
     {
       CHECK_ARGS (1);
       g_iLogVerbose = atoi(argv[++i]);
-      ErrorF("loglevel %d\n", g_iLogVerbose);
       return 2;
     }
 

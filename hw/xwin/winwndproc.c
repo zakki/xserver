@@ -100,7 +100,7 @@ winWindowProc (HWND hwnd, UINT message,
   int				iScanCode;
   int				i;
 
-#if CYGDEBUG | TRUE
+#if CYGDEBUG
   winDebugWin32Message("winWindowProc", hwnd, message, wParam, lParam);
 #endif
   
@@ -1092,13 +1092,9 @@ winDebug(" 12. g_hwndLastKeyPress = %lX (keycode = %d, %s, wParam = 0x%02X)\n", 
           case VK_CONTROL:
           case VK_SHIFT:
             if (winCheckKeyPressed(wParam, lParam))
-            {
-              winDebug ("winWindowProc - WM_*KEYDOWN - Windows auto-repeat\n");
               return 0;
-            }
             break;
           default:
-            winDebug ("winWindowProc - WM_*KEYDOWN - Windows auto-repeat\n");
             return 0;
         }
       } 

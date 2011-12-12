@@ -120,9 +120,6 @@ winTranslateKey (WPARAM wParam, LPARAM lParam, int *piScanCode)
         *piScanCode = iParamScanCode;
         break;
     }
-#ifdef XWIN_WINIME
-winDebug("%s(), ScanCode = 0x%02X\n", __FUNCTION__, *piScanCode);
-#endif
 }
 
 
@@ -591,6 +588,7 @@ winKeybdReleaseKeys ()
       g_winKeyState[i] = FALSE;
     }
 }
+
 
 
 /*
