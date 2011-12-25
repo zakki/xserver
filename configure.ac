@@ -648,6 +648,11 @@ AC_ARG_ENABLE(kdrive-kbd,     AS_HELP_STRING([--enable-kdrive-kbd], [Build kbd d
 AC_ARG_ENABLE(kdrive-mouse,   AC_HELP_STRING([--enable-kdrive-mouse], [Build mouse driver for kdrive (default: auto)]), [KDRIVE_MOUSE=$enableval], [KDRIVE_MOUSE=auto])
 AC_ARG_ENABLE(kdrive-evdev,   AC_HELP_STRING([--enable-kdrive-evdev], [Build evdev driver for kdrive (default: auto)]), [KDRIVE_EVDEV=$enableval], [KDRIVE_EVDEV=auto])
 
+dnl XWin options
+AC_ARG_ENABLE(winime,          AS_HELP_STRING([--enable-winime], [Build Windows IME bridge (default: disabled)]),
+                                [WINIME=$enableval],
+                                [WINIME=no])
+
 
 dnl chown/chmod to be setuid root as part of build
 dnl Replaces InstallXserverSetUID in imake
@@ -1933,6 +1938,9 @@ dnl XWin with AIGLX requires OpenGL spec files in order to generate wrapper code
            AC_SUBST(KHRONOS_SPEC_DIR)
 	fi
 
+	if test "x$WINIME" = xyes; then
+		CFLAGS="${CFLAGS} -DXWIN_WINIME"
+	fi
 fi
 AM_CONDITIONAL(XWIN, [test "x$XWIN" = xyes])
 AM_CONDITIONAL(XWIN_MULTIWINDOW, [test "x$XWIN" = xyes])
@@ -1943,6 +1951,7 @@ AM_CONDITIONAL(XWIN_NATIVEGDI, [test "x$XWIN" = xyes])
 AM_CONDITIONAL(XWIN_PRIMARYFB, [test "x$XWIN" = xyes])
 AM_CONDITIONAL(XWIN_RANDR, [test "x$XWIN" = xyes])
 AM_CONDITIONAL(XWIN_XV, [test "x$XWIN" = xyes && test "x$XV" = xyes])
+AM_CONDITIONAL(XWIN_WINIME, [test "x$XWIN" = xyes && test "x$WINIME" = xyes])
 
 dnl Darwin / OS X DDX
 if test "x$XQUARTZ" = xyes; then
@@ -2288,6 +2297,7 @@ hw/xwin/Makefile
 hw/xwin/glx/Makefile
 hw/xwin/man/Makefile
 hw/xwin/wmutil/Makefile
+hw/xwin/winime/Makefile
 hw/xquartz/Makefile
 hw/xquartz/GL/Makefile
 hw/xquartz/bundle/Makefile
@@ -2307,3 +2317,8 @@ test/xi2/Makefile
 xserver.ent
 xorg-server.pc
 ])
+
+dnl hw/xwin/kinput2-v3.1/Makefile
+dnl hw/xwin/kinput2-v3.1/cmd/Makefile
+dnl hw/xwin/kinput2-v3.1/lib/Makefile
+dnl hw/xwin/kinput2-v3.1/lib/imlib/Makefile

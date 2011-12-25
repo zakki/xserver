@@ -47,6 +47,9 @@
 /* Rows 160 through 165 correspond to software-generated codes, which
  * may not be associated with the appropriate scan code.
  */
+#ifdef WINVKMAP_DECLARE
+extern const int g_iKeyMap[];
+#else
 const int
  g_iKeyMap[] = {
     /* count      Windows VK,     ASCII,          ASCII when extended VK */
@@ -307,5 +310,6 @@ const int
     /* 254 */ 0, 0, 0,
     /* 255 */ VK_FN, 0, KEY_Fn  /* Most keyboards don't generate a scancode for Fn, but a few do... */
 };
+#endif
 
 #endif                          /* WINVKMAP_H */

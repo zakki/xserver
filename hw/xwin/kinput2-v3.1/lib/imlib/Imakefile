@@ -1,0 +1,28 @@
+#include "../../Kinput2.conf"
+
+#ifdef UseWinIME
+#include <Server.tmpl>
+#endif
+
+             SRCS = imattr.c imbuf.c imconv.c imdata.c imdispatch.c \
+		    imic.c improto.c imrequest.c imxport.c
+             OBJS = imattr.o imbuf.o imconv.o imdata.o imdispatch.o \
+		    imic.o improto.o imrequest.o imxport.o
+
+   LOCAL_INCLUDES = -I../../include -I.
+         INCLUDES = $(LOCAL_INCLUDES)
+
+#ifdef UseWinIME
+          DEFINES = $(TRANSPORTDEFS) -DUSE_WINIME -DXIM_BC	/* XIM bug compatibility */
+#else
+          DEFINES = $(TRANSPORTDEFS) -DXIM_BC	/* XIM bug compatibility */
+#endif
+
+NormalLibraryObjectRule()
+NormalLibraryTarget(im,$(OBJS))
+DependTarget()
+
+#ifdef IHaveSubdirs
+MakeSubdirs($(SUBDIRS))
+DependSubdirs($(SUBDIRS))
+#endif

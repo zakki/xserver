@@ -38,13 +38,24 @@
 #endif
 #include <stdarg.h>
 
+static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
 void winVMsg(int, MessageType, int verb, const char *, va_list);
+
+void
+LogVMessageVerbLock(MessageType type, int verb, const char *format,
+					va_list args)
+{
+	pthread_mutex_lock(&mutex);
+	LogVMessageVerb(type, verb, format, args);
+	pthread_mutex_unlock(&mutex);
+}
 
 void
 winVMsg(int scrnIndex, MessageType type, int verb, const char *format,
         va_list ap)
 {
-    LogVMessageVerb(type, verb, format, ap);
+    LogVMessageVerbLock(type, verb, format, ap);
 }
 
 void
@@ -53,7 +64,7 @@ winDrvMsg(int scrnIndex, MessageType type, const char *format, ...)
     va_list ap;
 
     va_start(ap, format);
-    LogVMessageVerb(type, 0, format, ap);
+    LogVMessageVerbLock(type, 0, format, ap);
     va_end(ap);
 }
 
@@ -63,7 +74,7 @@ winMsg(MessageType type, const char *format, ...)
     va_list ap;
 
     va_start(ap, format);
-    LogVMessageVerb(type, 1, format, ap);
+    LogVMessageVerbLock(type, 1, format, ap);
     va_end(ap);
 }
 
@@ -74,7 +85,7 @@ winDrvMsgVerb(int scrnIndex, MessageType type, int verb, const char *format,
     va_list ap;
 
     va_start(ap, format);
-    LogVMessageVerb(type, verb, format, ap);
+    LogVMessageVerbLock(type, verb, format, ap);
     va_end(ap);
 }
 
@@ -84,7 +95,7 @@ winMsgVerb(MessageType type, int verb, const char *format, ...)
     va_list ap;
 
     va_start(ap, format);
-    LogVMessageVerb(type, verb, format, ap);
+    LogVMessageVerbLock(type, verb, format, ap);
     va_end(ap);
 }
 
@@ -94,7 +105,7 @@ winErrorFVerb(int verb, const char *format, ...)
     va_list ap;
 
     va_start(ap, format);
-    LogVMessageVerb(X_NONE, verb, format, ap);
+    LogVMessageVerbLock(X_NONE, verb, format, ap);
     va_end(ap);
 }
 
@@ -114,7 +125,7 @@ winDebug(const char *format, ...)
     va_list ap;
 
     va_start(ap, format);
-    LogVMessageVerb(X_NONE, 3, format, ap);
+    LogVMessageVerbLock(X_NONE, 3, format, ap);
     va_end(ap);
 }
 
@@ -124,7 +135,7 @@ winTrace(const char *format, ...)
     va_list ap;
 
     va_start(ap, format);
-    LogVMessageVerb(X_NONE, 10, format, ap);
+    LogVMessageVerbLock(X_NONE, 10, format, ap);
     va_end(ap);
 }
 

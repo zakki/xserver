@@ -539,6 +539,9 @@ AccessXFilterPressEvent(DeviceEvent *event, DeviceIntPtr keybd)
             if (BitIsOn(keybd->kbdfeed->ctrl.autoRepeats, key)) {
                 if (xkbDebugFlags & 0x10)
                     DebugF("Starting software autorepeat...\n");
+#ifdef XWIN_WINIME
+				if (!event->key_ime) {
+#endif
                 if (xkbi->repeatKey == key)
                     ignoreKeyEvent = TRUE;
                 else {
@@ -548,6 +551,9 @@ AccessXFilterPressEvent(DeviceEvent *event, DeviceIntPtr keybd)
                                                     AccessXRepeatKeyExpire,
                                                     (pointer) keybd);
                 }
+#ifdef XWIN_WINIME
+				}
+#endif
             }
         }
     }

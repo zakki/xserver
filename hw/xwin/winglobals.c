@@ -102,6 +102,33 @@ HWND g_hwndClipboard = NULL;
 void *g_pClipboardDisplay = NULL;
 Window g_iClipboardWindow = None;
 Atom g_atomLastOwnedSelection = None;
+#ifdef XWIN_WINIME
+HGLOBAL g_hText = NULL;
+#endif // #ifdef XWIN_WINIME
+#endif
+
+
+#ifdef XWIN_WINIME
+/*
+ * IME variables
+ */
+
+Bool g_fIME = FALSE;
+Bool g_fIMELaunched = FALSE;
+Bool g_fIMEStarted = FALSE;
+HWND g_hwndLastKeyPress = NULL;
+
+winDispatchProcPtr winimeProcEstablishConnectionOrig = NULL;
+winDispatchProcPtr winimeProcQueryTreeOrig = NULL;
+pthread_t g_ptImServerProc = 0;
+DWORD g_ThreadID = 0;
+HANDLE g_ThreadHandle = 0;
+//Window g_imServerWindow = None;
+DWORD g_TriggerKeycode = 0;
+long g_TriggerModifier = 0;
+//DWORD g_ModifierList[8];
+HWND g_hwndIMMMsgWnd = NULL;
+Bool g_imeKey = FALSE;
 #endif
 
 /*
@@ -118,5 +145,19 @@ winInitializeGlobals(void)
     g_pClipboardDisplay = NULL;
     g_atomLastOwnedSelection = None;
     g_hwndClipboard = NULL;
+#endif
+#ifdef XWIN_WINIME
+    g_hText = NULL;
+#endif
+#ifdef XWIN_WINIME
+    g_hwndLastKeyPress = NULL;
+    g_fIMELaunched = FALSE;
+    g_ptImServerProc = 0;
+    g_ThreadID = 0;
+    g_ThreadHandle = 0;
+    g_fIMEStarted = FALSE;
+    g_TriggerKeycode = 0;
+    g_TriggerModifier = 0;
+    g_hwndIMMMsgWnd = NULL;
 #endif
 }

@@ -38,6 +38,8 @@
 #include "win.h"
 #include "wmutil/scancodes.h"
 #include "wmutil/keyboard.h"
+#define WINVKMAP_DECLARE
+#include "wmutil/winvkmap.h"
 #include "winconfig.h"
 #include "winmsg.h"
 
@@ -49,6 +51,14 @@
 #define AltLangMask	Mod3Mask
 #define KanaMask	Mod4Mask
 #define ScrollLockMask	Mod5Mask
+#define _WINIME_SERVER_
+#include <X11/extensions/winimestr.h>
+
+Bool g_winKeyState[NUM_KEYCODES];
+
+#ifdef XWIN_WINIME
+#define LOCALEVENT_MAX 4
+#endif
 
 /*
  * Local prototypes
@@ -293,9 +303,33 @@ winSendKeyEventCallback(DWORD dwKey, bool fDown)
         return;
 #endif
 
+#ifdef XWIN_WINIME
+    winDebug("Win Key Event(type = %d, keycode = %d ifIme = %d).\n", fDown, (int)dwKey, g_imeKey);
+    if (g_imeKey)
+    {
+        QueueKeyboardEvents(g_pwinKeyboard, KeyPress, KEY_UNKNOWN, NULL);
+        QueueKeyboardEvents(g_pwinKeyboard, KeyRelease, KEY_UNKNOWN, NULL);
+        return;
+    }
+#endif
+
     QueueKeyboardEvents(g_pwinKeyboard, fDown ? KeyPress : KeyRelease,
                         dwKey, NULL);
 }
+
+#ifdef XWIN_WINIME
+void
+winSendImeKeyEvent(DWORD dwKey, Bool fDown)
+{
+#ifdef XWIN_WINIME
+    g_imeKey = TRUE;
+#endif
+    winSendKeyEventCallback(dwKey, fDown);
+#ifdef XWIN_WINIME
+    g_imeKey = FALSE;
+#endif
+}
+#endif
 
 /*
  */
