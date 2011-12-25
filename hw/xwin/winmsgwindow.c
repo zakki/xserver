@@ -155,7 +155,7 @@ winMsgWindowThreadProc(void *arg)
 #if CYGDEBUG
           winDebugWin32Message("winMsgWindowThread", msg.hwnd, msg.message, msg.wParam, msg.lParam);
 #endif
-          DispatchMessage (&msg);
+	  winProcessMessage(&msg);
         }
     }
 

@@ -76,6 +76,25 @@ extern Bool			g_fClipboard;
 #ifdef XWIN_CLIPBOARD
 static void
 winClipboardShutdown (void);
+#ifdef XWIN_WINIME
+extern HGLOBAL		g_hText;
+#endif	// #ifdef XWIN_WINIME
+#endif
+
+#ifdef XWIN_WINIME
+static void
+winimeShutdown (void);
+extern pthread_t	g_ptImServerProc;
+extern Bool		g_fIMELaunched;
+extern Bool		g_fIME;
+extern Bool		g_fIMEStarted;
+extern HWND		g_hwndIMMMsgWnd;
+
+#define USE_WINTHREAD
+extern DWORD			g_ThreadID;
+extern HANDLE			g_ThreadHandle;
+
+extern void freeProcessKeyLists(void);
 #endif
 
 #if defined(DDXOSVERRORF)
@@ -146,6 +165,13 @@ winClipboardShutdown (void)
 
       g_fClipboardLaunched = FALSE;
       g_fClipboardStarted = FALSE;
+#ifdef XWIN_WINIME
+      if (g_hText != NULL)
+      {
+	GlobalFree(g_hText);
+	g_hText = NULL;
+      }
+#endif
 
       winDebug ("winClipboardShutdown - Clipboard thread has exited.\n");
     }
@@ -164,6 +190,45 @@ ddxPushProviders(void)
 #endif
 }
 
+#ifdef XWIN_WINIME
+static void
+winimeShutdown (void)
+{
+winDebug("%s(), g_fIME = %d, g_fIMELaunched = %d, g_fIMEStarted = %d\n", __FUNCTION__, g_fIME, g_fIMELaunched, g_fIMEStarted);
+
+    winimeImeOff();
+
+    if ( (g_fIME == TRUE) && (g_fIMELaunched == TRUE) && (g_fIMEStarted == TRUE) )
+    {
+#ifdef USE_WINTHREAD
+	if (g_ThreadHandle != 0)
+	{
+	    // FIXME: TerminateThread は危ない…
+winDebug("%s(), TerminateThread 0x%08X...\n", __FUNCTION__, g_ThreadHandle);
+	    TerminateThread(g_ThreadHandle, FALSE);
+winDebug("%s(), TerminateThread OK\n", __FUNCTION__);
+//	    DeleteAllExtContext();	// これも呼ばないといけないか…
+	    g_fIMEStarted = FALSE;
+	    g_ThreadHandle = 0;
+//	    g_ptImServerProc = 0;
+	    g_fIMELaunched = FALSE;
+	    g_fIMEStarted = FALSE;
+	    freeProcessKeyLists();
+	}
+#else
+	if (g_ptImServerProc != 0)
+	{
+	    pthread_join (g_ptImServerProc, NULL);
+	    g_ptImServerProc = 0;
+	    g_fIMELaunched = FALSE;
+	    g_fIMEStarted = FALSE;
+	}
+#endif
+    }
+winDebug("%s(), end.\n", __FUNCTION__);
+}
+#endif
+
 /*
  * Called right before KillAllClients when the server is going to reset,
  * allows us to shutdown our seperate threads cleanly.
@@ -176,6 +241,9 @@ ddxBeforeReset (void)
 
 #ifdef XWIN_CLIPBOARD
   winClipboardShutdown ();
+#endif
+#ifdef XWIN_WINIME
+  winimeShutdown();
 #endif
 }
 

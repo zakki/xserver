@@ -38,6 +38,16 @@
 
 #include "xkbsrv.h"
 
+
+/*
+ * References to external symbols
+ */
+
+#ifdef XWIN_WINIME
+extern Bool			g_fIME;
+#endif
+
+
 #ifdef XWIN_XF86CONFIG
 #ifndef CONFIGPATH
 #define CONFIGPATH  "%A," "%R," \
@@ -292,7 +302,11 @@ winConfigKeyboard (DeviceIntPtr pDevice)
 	   Same might apply for chinese, korean and other symbol languages
 	   too */
         layoutNum = (layoutNum & 0xffff);
-	if (keyboardType == 7)
+	if ((keyboardType == 7)
+#ifdef XWIN_WINIME
+	    && !g_fIME
+#endif
+	    )
 	  {
 	    /* Japanese layouts have problems with key event messages
 	       such as the lack of WM_KEYUP for Caps Lock key.

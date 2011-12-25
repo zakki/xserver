@@ -1059,6 +1059,15 @@ register int	i,send;
     return send;
 }
 
+#ifdef XWIN_WINIME
+void
+XkbFreeFilters(XkbSrvInfoPtr xkbi)
+{
+    free(xkbi->filters);
+    xkbi->szFilters = 0;
+}
+#endif
+
 void
 XkbHandleActions(DeviceIntPtr dev, DeviceIntPtr kbd, DeviceEvent* event)
 {

@@ -105,11 +105,19 @@ winClipboardProc (void *pvNotUsed)
   Bool			fUseUnicode;
   char			szDisplay[512];
   int			iSelectError;
+  static unsigned long	s_ulServerGeneration = 0;
 
   pthread_cleanup_push(&winClipboardThreadExit, NULL);
 
   winDebug ("winClipboardProc - Hello\n");
   ++clipboardRestarts;
+
+  /* Watch for server reset */
+  if (s_ulServerGeneration != serverGeneration)
+    {
+      /* Save new generation number */
+      s_ulServerGeneration = serverGeneration;
+    }
 
   /* Do we have Unicode support? */
   g_fUnicodeSupport = winClipboardDetectUnicodeSupport ();
@@ -179,7 +187,8 @@ winClipboardProc (void *pvNotUsed)
       else
 	break;
     }
-  while (pDisplay == NULL && iRetries < WIN_CONNECT_RETRIES);
+  while (pDisplay == NULL && s_ulServerGeneration == serverGeneration);
+
 
   /* Make sure that the display opened */
   if (pDisplay == NULL)
@@ -329,7 +338,16 @@ winClipboardProc (void *pvNotUsed)
       iSelectError = WSAGetLastError();
 #endif
 
+#ifdef XWIN_WINIME
+      if (iReturn == 0)
+	{
+	  ErrorF ("winClipboardProc - Call to select () failed: %d.\n", iReturn);
+	  continue;
+	}
+      else if (iReturn < 0)
+#else
       if (iReturn < 0)
+#endif
 	{
 #ifndef HAS_WINSOCK
           if (iSelectError == EINTR)
@@ -436,6 +454,7 @@ winClipboardProc_Done:
   g_iClipboardWindow = None;
   g_pClipboardDisplay = NULL;
   g_hwndClipboard = NULL;
+  XSetIOErrorHandler (NULL);
 
   /* checking if we need to restart */
   if (clipboardRestarts >= WIN_CLIPBOARD_RETRIES)

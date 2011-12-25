@@ -205,7 +205,7 @@ ProcWindowsWMSelectInput (ClientPtr client)
        */
       if (!pHead)
 	{
-	  pHead = (WMEventPtr *) malloc(sizeof (WMEventPtr));
+	  pHead = (WMEventPtr *) malloc(sizeof (WMEventRec));
 	  if (!pHead ||
 	      !AddResource (eventResource, eventResourceType, (pointer)pHead))
 	    {

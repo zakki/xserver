@@ -45,6 +45,12 @@
 
 static Bool g_winKeyState[NUM_KEYCODES];
 
+#ifdef XWIN_WINIME
+static DWORD last_dwKeyCode = 0;	// dwKey + MIN_KEYCODE
+
+#define LOCALEVENT_MAX 4
+#endif
+
 /*
  * Local prototypes
  */
@@ -511,21 +517,46 @@ winKeybdReleaseKeys (void)
  */
 
 void
-winSendKeyEvent (DWORD dwKey, Bool fDown)
+winSendKeyEventImpl (DWORD dwKey, Bool fDown, Bool fIme)
 {
   /*
    * When alt-tabing between screens we can get phantom key up messages
    * Here we only pass them through it we think we should!
    */
-  if (g_winKeyState[dwKey] == FALSE && fDown == FALSE) return;
+  if (g_winKeyState[dwKey] == FALSE && fDown == FALSE)
+    {
+#ifdef XWIN_WINIME
+      if (fIme)
+        {
+	  winDebug("skip\n");
+	  last_dwKeyCode = dwKey + MIN_KEYCODE;
+	}
+#endif
+      return;
+    }
 
   /* Update the keyState map */
   g_winKeyState[dwKey] = fDown;
 
-  QueueKeyboardEvents(g_pwinKeyboard, fDown ? KeyPress : KeyRelease, dwKey + MIN_KEYCODE, NULL);
+#ifdef XWIN_WINIME
+#if 0
+  if (fIme)
+    {
+	xCurrentEvent.u.keyButtonPointer.pad1 = 1;
+      /* regist  */
+      if (fDown)
+	regImeProcessKeyList(xCurrentEvent.u.keyButtonPointer.time, xCurrentEvent.u.u.detail);
+    }
+#endif
+#endif
 
-  winDebug("winSendKeyEvent: dwKey: %d, fDown: %d\n",
-           dwKey, fDown);
+  QueueKeyboardEvents(g_pwinKeyboard, fDown ? KeyPress : KeyRelease, dwKey + MIN_KEYCODE, NULL);
+}
+
+void
+winSendKeyEvent(DWORD dwKey, Bool fDown)
+{
+  winSendKeyEventImpl (dwKey, fDown, FALSE);
 }
 
 BOOL winCheckKeyPressed(WPARAM wParam, LPARAM lParam)
@@ -594,3 +625,11 @@ XkbDDXPrivate(DeviceIntPtr dev,KeyCode key,XkbAction *act)
 
     return 0;
 }
+
+#ifdef XWIN_WINIME
+void
+winSendImeKeyEvent (DWORD dwKey, Bool fDown)
+{
+  winSendKeyEventImpl (dwKey, fDown, TRUE);
+}
+#endif

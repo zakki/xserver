@@ -1,0 +1,101 @@
+#include "../Kinput2.conf"
+
+#ifdef UseWinIME
+#include <Server.tmpl>
+#endif
+
+       WIDGETSRCS = AdoptedShe.c AuxPanel.c CandPanel.c Canvas.c \
+            CanvasShel.c ConvCtrl.c ConvDisp.c ConvMgr.c \
+            ICLabel.c InputConv.c KIProto.c OffConv.c \
+            OverConv.c OnConv.c WcharDisp.c XimpProto.c IMProto.c
+
+       WIDGETOBJS = AdoptedShe.o AuxPanel.o CandPanel.o Canvas.o \
+            CanvasShel.o ConvCtrl.o ConvDisp.o ConvMgr.o \
+            ICLabel.o InputConv.o KIProto.o OffConv.o \
+            OverConv.o OnConv.o WcharDisp.o XimpProto.o IMProto.o
+
+         UTILSRCS = cachedatom.c cachedfont.c ctext.c dispatch.c \
+            fontset.c wstring.c xtwstr.c xwstr.c \
+            asyncerr.c fontbank.c parsekey.c ioecall.c
+
+         UTILOBJS = cachedatom.o cachedfont.o ctext.o dispatch.o \
+            fontset.o wstring.o xtwstr.o xwstr.o \
+            asyncerr.o fontbank.o parsekey.o ioecall.o
+
+#define PassCDebugFlags 'CDEBUGFLAGS=$(CDEBUGFLAGS)'
+#define IHaveSubdirs
+          SUBDIRS = imlib
+
+#ifdef UseWnn
+          WNNSRCS = CcWnn.c cconv.c wnnlib.c
+          WNNOBJS = CcWnn.o cconv.o wnnlib.o
+          WNNINCS = -I$(WNNINCDIR)
+#ifdef UseWnn6
+          WNN6DEF = -DWNN6
+#endif
+#ifdef WnnLibDir
+        WNNLIBDIR = WnnLibDir
+        WNNLIBDEF = -DLIBDIR=\"$(WNNLIBDIR)\"
+#endif
+          WNNDEFS = -DCCDEFPATH=\"$(CCDEF_DIR)/\" \
+                    $(WNN6DEF) $(WNNLIBDEF)
+#endif
+#ifdef UseCanna
+        CANNASRCS = Canna.c
+        CANNAOBJS = Canna.o
+        CANNAINCS = -I$(CANNASRC)
+#endif
+#ifdef UseSj3
+          SJ3SRCS = Sj3.c
+          SJ3OBJS = Sj3.o
+          SJ3INCS = -I$(SJ3SRC)/sj3lib -I$(SJ3SRC)
+          SJ3DEFS = -DSJ3DEFPATH=\"$(SJ3DEF_DIR)/\"
+          SUBDIRS = imlib Xsj3clib
+#endif
+#ifdef UseAtok
+         ATOKSRCS = Atok.c
+         ATOKOBJS = Atok.o
+         ATOKINCS = -I$(ATOKINCDIR)
+          SUBDIRS = imlib Xatoklib
+#endif
+#ifdef UseWinIME
+       WINIMESRCS = WinIMM32.c
+       WINIMEOBJS = WinIMM32.o
+       WINIMEINCS = -I$(SERVERSRC)/hw/xwin \
+		    -I$(XBUILDINCDIR) -I$(FONTINCSRC) \
+		    -I$(SERVERSRC)/fb -I$(SERVERSRC)/mi \
+		    -I$(SERVERSRC)/miext/shadow \
+		    -I$(SERVERSRC)/miext/rootless \
+		    -I$(SERVERSRC)/miext/rootless/safeAlpha \
+		    -I$(SERVERSRC)/include -I$(SERVERSRC)/os  \
+	            -I$(EXTINCSRC) -I$(XINCLUDESRC) \
+		    -I$(SERVERSRC)/render -I$(SERVERSRC)/randr \
+		    -I$(WINDOWSWMLIBSRC) -I$(WINIMELIBSRC) \
+		    -I$(WINIMESRC)
+       #if HasShm
+       SHMDEF = -DHAS_SHM
+       #endif
+
+       MMAPDEF = -DHAS_MMAP
+
+       WINIMEDEFS = -DUSE_WINIME $(OS_DEFINES) $(SHMDEF) $(MMAPDEF) -DPROJECTROOT="\"$(PROJECTROOT)\"" -DETCX11DIR="\"$(ETCX11DIR)\""
+#endif
+
+             SRCS = $(WIDGETSRCS) $(UTILSRCS) \
+                    $(WNNSRCS) $(CANNASRCS) $(SJ3SRCS) $(ATOKSRCS) $(WINIMESRCS)
+             OBJS = $(WIDGETOBJS) $(UTILOBJS) \
+                    $(WNNOBJS) $(CANNAOBJS) $(SJ3OBJS) $(ATOKOBJS) $(WINIMEOBJS)
+
+   LOCAL_INCLUDES = -I../include -Iimlib
+         INCLUDES = $(WNNINCS) $(LOCAL_INCLUDES) $(CANNAINCS) $(SJ3INCS) $(ATOKINCS) $(WINIMEINCS)
+
+          DEFINES = $(WNNDEFS) $(SJ3DEFS) $(TRANSPORTDEFS) $(WINIMEDEFS)
+
+NormalLibraryObjectRule()
+NormalLibraryTarget(Ki2,$(OBJS))
+DependTarget()
+
+#ifdef IHaveSubdirs
+MakeSubdirs($(SUBDIRS))
+DependSubdirs($(SUBDIRS))
+#endif
