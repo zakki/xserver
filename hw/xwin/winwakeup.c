@@ -55,7 +55,7 @@ winWakeupHandler (int nScreen,
 	  && (g_hDlgAbout == 0
 	      || !IsDialogMessage (g_hDlgAbout, &msg)))
 	{
-	  DispatchMessage (&msg);
+	  winProcessMessage(&msg);
 	}
     }
 }

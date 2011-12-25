@@ -47,6 +47,11 @@
 #ifdef XWIN_CLIPBOARD
 extern Bool			g_fClipboardStarted;
 #endif
+
+#ifdef XWIN_WINIME
+extern Bool			g_fIMEStarted;
+#endif
+
 /*
  * Local function prototypes
  */
@@ -264,6 +269,10 @@ winDisplayExitDialog (winPrivScreenPtr pScreenPriv)
 #if defined(XWIN_CLIPBOARD)
   if (g_fClipboardStarted)
     liveClients--; /* clipboard manager */
+#endif
+#ifdef XWIN_WINIME
+  if (g_fIMEStarted)
+    liveClients--; /* internal kinput2 */
 #endif
 
   /* A user reported that this sometimes drops below zero. just eye-candy. */ 

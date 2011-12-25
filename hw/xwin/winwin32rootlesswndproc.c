@@ -42,6 +42,13 @@
 #include "winmultiwindowclass.h"
 #include "winmsg.h"
 #include "inputstr.h"
+#ifdef XWIN_WINIME
+#define _WINIME_SERVER_
+#include <X11/extensions/winime.h>
+#include <X11/extensions/winimestr.h>
+#include <imm.h>
+extern HWND g_hwndLastKeyPress;
+#endif
 
 
 /*
@@ -455,6 +462,13 @@ winMWExtWMWindowProc (HWND hwnd, UINT message,
       SetProp (hwnd,
 	       WIN_WINDOW_PROP,
 	       (HANDLE)((LPCREATESTRUCT) lParam)->lpCreateParams);
+
+#ifdef XWIN_WINIME
+      g_hwndLastKeyPress = hwnd;
+winDebug("  6. g_hwndLastKeyPress = %lX\n", g_hwndLastKeyPress);
+      /* Disable IME by default */
+      ImmAssociateContext (hwnd, (HIMC) NULL);
+#endif
       return 0;
 
     case WM_CLOSE:
@@ -713,6 +727,10 @@ winMWExtWMWindowProc (HWND hwnd, UINT message,
       if (!winIsInternalWMRunning(pScreenInfo) && !IsMouseActive (pWin))
 	return MA_NOACTIVATE;
 
+#ifdef XWIN_WINIME
+      g_hwndLastKeyPress = hwnd;
+winDebug("  7. g_hwndLastKeyPress = %lX\n", g_hwndLastKeyPress);
+#endif
       break;
 
     case WM_KILLFOCUS:
@@ -732,6 +750,15 @@ winMWExtWMWindowProc (HWND hwnd, UINT message,
     case WM_KEYDOWN:
 #if CYGMULTIWINDOW_DEBUG
       winDebug ("winMWExtWMWindowProc - WM_*KEYDOWN\n");
+#endif
+
+#ifdef XWIN_WINIME
+      g_hwndLastKeyPress = hwnd;
+winDebug("  8. g_hwndLastKeyPress = %lX\n", g_hwndLastKeyPress);
+      /*
+       * Ignore IME process key
+       */
+// test      if (wParam == VK_PROCESSKEY) return 0;
 #endif
 
       /*
@@ -760,6 +787,15 @@ winMWExtWMWindowProc (HWND hwnd, UINT message,
 
 #if CYGMULTIWINDOW_DEBUG
       winDebug ("winMWExtWMWindowProc - WM_*KEYUP\n");
+#endif
+
+#ifdef XWIN_WINIME
+      g_hwndLastKeyPress = hwnd;
+winDebug("  9. g_hwndLastKeyPress = %lX\n", g_hwndLastKeyPress);
+      /*
+       * Ignore IME process key
+       */
+// test      if (wParam == VK_PROCESSKEY) return 0;
 #endif
 
       /* Pass the message to the root window */
@@ -1322,6 +1358,24 @@ winMWExtWMWindowProc (HWND hwnd, UINT message,
     case WM_UNMANAGE:
       ErrorF ("winMWExtWMWindowProc - WM_UNMANAGE\n");
       break;
+
+#ifdef XWIN_WINIME
+    case WM_IME_STARTCOMPOSITION:
+    case WM_IME_ENDCOMPOSITION:
+    case WM_IME_COMPOSITION:
+    case WM_IME_SETCONTEXT:		//
+    case WM_IME_NOTIFY:
+    case WM_IME_CONTROL:		//
+    case WM_IME_COMPOSITIONFULL:	//
+    case WM_IME_SELECT:			//
+    case WM_IME_CHAR:
+    case WM_IME_REQUEST:		//
+    case WM_IME_KEYDOWN:		//
+    case WM_IME_KEYUP:			//
+
+    case WM_CHAR:
+      return winIMEMessageHandler (hwnd, message, wParam, lParam);
+#endif
 
     default:
       break;

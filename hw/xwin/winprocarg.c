@@ -924,6 +924,17 @@ ddxProcessArgument (int argc, char *argv[], int i)
       return 1;
     }
 
+#ifdef XWIN_WINIME
+  /*
+   * Look for the '-ime' argument
+   */
+  if (IS_OPTION ("-ime"))
+    {
+      g_fIME = TRUE;
+      return 1;
+    }
+#endif
+
   /*
    * Look for the '-fp' argument
    */

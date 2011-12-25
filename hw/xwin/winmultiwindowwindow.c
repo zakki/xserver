@@ -615,7 +615,7 @@ winDestroyWindowsWindow (WindowPtr pWin)
     {
       if (g_hDlgDepthChange == 0 || !IsDialogMessage (g_hDlgDepthChange, &msg))
 	{
-	  DispatchMessage (&msg);
+	  winProcessMessage(&msg);
 	}
     }
 

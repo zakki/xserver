@@ -85,4 +85,9 @@ extern Bool			g_fButton[3];
 extern Bool			g_fNoConfigureWindow;
 #endif
 
+extern pthread_mutex_t g_pmTerminating;
+#ifdef XWIN_WINIME
+extern Bool			g_fIME;
+#endif
+
 #endif /* WINGLOBALS_H */

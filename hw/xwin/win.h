@@ -207,7 +207,22 @@
 #include "winwindow.h"
 #include "winmsg.h"
 
+#ifdef XWIN_WINIME
+#include "winimedefs.h"
 
+#define WM_IME_REQUEST 0x0288
+#define IMR_QUERYCHARPOSITION 0x0006
+
+/*
+typedef struct tagIMECHARPOSITION {
+	DWORD dwSize;
+	DWORD dwCharPos;
+	POINT pt;
+	UINT cLineHeight;
+	RECT rcDocument;
+} IMECHARPOSITION,*PIMECHARPOSITION;
+*/
+#endif
 /*
  * Debugging macros
  */
@@ -984,6 +999,11 @@ winCheckKeyPressed(WPARAM wParam, LPARAM lParam);
 void
 winFixShiftKeys (int iScanCode);
 
+#ifdef XWIN_WINIME
+void
+winSendImeKeyEvent (DWORD dwKey, Bool fDown);
+#endif
+
 /*
  * winkeyhook.c
  */
@@ -1344,6 +1364,9 @@ LRESULT CALLBACK
 winWindowProc (HWND hWnd, UINT message, 
 	       WPARAM wParam, LPARAM lParam);
 
+void
+winProcessMessage (LPMSG lpMsg);
+
 
 #ifdef XWIN_MULTIWINDOWEXTWM
 /*
@@ -1464,6 +1487,46 @@ winWindowsWMExtensionInit (void);
 
 Bool
 winInitCursor (ScreenPtr pScreen);
+
+#ifdef XWIN_WINIME
+/*
+ * winime.c
+ */
+
+void
+winWinIMEExtensionInit (void);
+
+void
+winWinIMESendEvent (int type, unsigned int mask, int kind, int arg, int context, HWND hwnd);
+
+int
+winHIMCtoContext (DWORD hIMC);
+
+void
+winCommitCompositionResult (int nContext, int nIndex, void *pData, int nLen);
+
+Bool
+winHIMCCompositionDraw(DWORD hIMC);
+
+LRESULT
+winIMEMessageHandler (HWND hwnd, UINT message,
+		      WPARAM wParam, LPARAM lParam);
+
+int
+winimeImeOff(void);
+
+void
+freeProcessKeyLists(void);
+
+/*
+ * kinput2.c
+ */
+int
+initKinput2(const char *display);
+
+void
+regImeProcessKeyList(CARD32 time, unsigned int keycode);
+#endif
 
 /*
  * winprocarg.c

@@ -44,6 +44,12 @@
 
 static Bool g_winKeyState[NUM_KEYCODES];
 
+#ifdef XWIN_WINIME
+static DWORD last_dwKeyCode = 0;	// dwKey + MIN_KEYCODE
+
+#define LOCALEVENT_MAX 4
+#endif
+
 /*
  * Local prototypes
  */
@@ -470,7 +476,7 @@ winKeybdReleaseKeys (void)
  */
 
 void
-winSendKeyEvent (DWORD dwKey, Bool fDown)
+winSendKeyEventImpl (DWORD dwKey, Bool fDown, Bool fIme)
 {
   EventListPtr events;
   int i, nevents;
@@ -479,7 +485,17 @@ winSendKeyEvent (DWORD dwKey, Bool fDown)
    * When alt-tabing between screens we can get phantom key up messages
    * Here we only pass them through it we think we should!
    */
-  if (g_winKeyState[dwKey] == FALSE && fDown == FALSE) return;
+  if (g_winKeyState[dwKey] == FALSE && fDown == FALSE)
+    {
+#ifdef XWIN_WINIME
+      if (fIme)
+        {
+	  winDebug("skip\n");
+	  last_dwKeyCode = dwKey + MIN_KEYCODE;
+	}
+#endif
+      return;
+    }
 
   /* Update the keyState map */
   g_winKeyState[dwKey] = fDown;
@@ -492,6 +508,12 @@ winSendKeyEvent (DWORD dwKey, Bool fDown)
 
   winDebug("winSendKeyEvent: dwKey: %d, fDown: %d, nEvents %d\n",
            dwKey, fDown, nevents);
+}
+
+void
+winSendKeyEvent(DWORD dwKey, Bool fDown)
+{
+  winSendKeyEventImpl (dwKey, fDown, FALSE);
 }
 
 BOOL winCheckKeyPressed(WPARAM wParam, LPARAM lParam)
@@ -529,3 +551,11 @@ void winFixShiftKeys (int iScanCode)
   if (iScanCode == KEY_ShiftR && g_winKeyState[KEY_ShiftL])
     winSendKeyEvent (KEY_ShiftL, FALSE);
 }
+
+#ifdef XWIN_WINIME
+void
+winSendImeKeyEvent (DWORD dwKey, Bool fDown)
+{
+  winSendKeyEventImpl (dwKey, fDown, TRUE);
+}
+#endif

@@ -526,7 +526,11 @@ KeySym *	sym = XkbKeySymsPtr(xkbi->desc,key);
 	    if (BitIsOn(keybd->kbdfeed->ctrl.autoRepeats,key)) {
 		if (xkbDebugFlags&0x10)
 		    DebugF("Starting software autorepeat...\n");
-		if (xkbi->repeatKey == key)
+		if (xkbi->repeatKey == key
+#ifdef XWIN_WINIME
+//		    || event->u.keyButtonPointer.pad1 == 1
+#endif
+		    )
 		    ignoreKeyEvent = TRUE;
 		else {
 		    xkbi->repeatKey = key;
