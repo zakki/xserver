@@ -41,6 +41,13 @@
 #include "winprefs.h"
 #include "winmsg.h"
 #include "inputstr.h"
+#ifdef XWIN_WINIME
+#define _WINIME_SERVER_
+#include <X11/extensions/winime.h>
+#include <X11/extensions/winimestr.h>
+#include <imm.h>
+extern HWND g_hwndLastKeyPress;
+#endif
 
 extern void winUpdateWindowPosition (HWND hWnd, HWND *zstyle);
 
@@ -295,6 +302,39 @@ winStartMousePolling(winPrivScreenPtr s_pScreenPriv)
 }
 
 /*
+ *
+ */
+
+char*
+WideToUTF8(int iUnicodeSize, wchar_t *pwszUnicodeStr, int *pLen)
+{
+  char			*pszUTF8 = NULL;
+
+  /* Convert to UTF8 */
+  *pLen = WideCharToMultiByte (CP_UTF8,
+			       0,
+			       (LPCWSTR)pwszUnicodeStr,
+			       iUnicodeSize/2,
+			       NULL,
+			       0,
+			       NULL,
+			       NULL);
+  pszUTF8 = (char *) malloc (*pLen+1);
+  WideCharToMultiByte (CP_UTF8,
+		       0,
+		       (LPCWSTR)pwszUnicodeStr,
+		       iUnicodeSize/2,
+		       pszUTF8,
+		       *pLen,
+		       NULL,
+		       NULL);
+  pszUTF8[*pLen] = '\0';
+
+  return pszUTF8;
+}
+
+
+/*
  * winTopLevelWindowProc - Window procedure for all top-level Windows windows.
  */
 
@@ -401,6 +441,12 @@ winTopLevelWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
        * currently being created.
        */
       winReorderWindowsMultiWindow ();
+#ifdef XWIN_WINIME
+      g_hwndLastKeyPress = hwnd;
+winDebug("  2. g_hwndLastKeyPress = %lX\n", g_hwndLastKeyPress);
+      /* Disable IME by default */
+      ImmAssociateContext (hwnd, (HIMC) NULL);
+#endif
 
       /* Fix a 'round title bar corner background should be transparent not black' problem when first painted */
       {
@@ -702,6 +748,10 @@ winTopLevelWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
       /* Add the keyboard hook if possible */
       if (g_fKeyboardHookLL)
 	g_fKeyboardHookLL = winInstallKeyboardHookLL ();
+#ifdef XWIN_WINIME
+      g_hwndLastKeyPress = hwnd;
+winDebug("  3. g_hwndLastKeyPress = %lX\n", g_hwndLastKeyPress);
+#endif
       return 0;
       
     case WM_KILLFOCUS:
@@ -727,7 +777,14 @@ winTopLevelWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
     case WM_SYSKEYDOWN:
     case WM_KEYDOWN:
-
+#ifdef XWIN_WINIME
+      g_hwndLastKeyPress = hwnd;
+winDebug("  4. g_hwndLastKeyPress = %lX\n", g_hwndLastKeyPress);
+      /*
+       * Ignore IME process key
+       */
+// test      if (wParam == VK_PROCESSKEY) return 0;
+#endif
       /*
        * Don't pass Alt-F4 key combo to root window,
        * let Windows translate to WM_CLOSE and close this top-level window.
@@ -782,6 +839,15 @@ winTopLevelWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
     case WM_SYSKEYUP:
     case WM_KEYUP:
+
+#ifdef XWIN_WINIME
+		g_hwndLastKeyPress = hwnd;
+		winDebug("  5. g_hwndLastKeyPress = %lX\n", g_hwndLastKeyPress);
+		/*
+		 * Ignore IME process key
+		 */
+// test      if (wParam == VK_PROCESSKEY) return 0;
+#endif
 
       /* Pass the message to the root window */
       return winWindowProc(hwndScreen, message, wParam, lParam);
@@ -1118,7 +1184,6 @@ winTopLevelWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	  ErrorF ("winTopLevelWindowProc - WM_MOUSEACTIVATE - "
 		  "MA_NOACTIVATE\n");
 #endif
-
 	  /* */
 	  return MA_NOACTIVATE;
 	}
@@ -1131,6 +1196,24 @@ winTopLevelWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	  return TRUE;
 	}
       break;
+
+#ifdef XWIN_WINIME
+    case WM_IME_STARTCOMPOSITION:
+    case WM_IME_ENDCOMPOSITION:
+    case WM_IME_COMPOSITION:
+    case WM_IME_SETCONTEXT:		//
+    case WM_IME_NOTIFY:
+    case WM_IME_CONTROL:		//
+    case WM_IME_COMPOSITIONFULL:	//
+    case WM_IME_SELECT:			//
+    case WM_IME_CHAR:
+    case WM_IME_REQUEST:		//
+    case WM_IME_KEYDOWN:		//
+    case WM_IME_KEYUP:			//
+
+    case WM_CHAR:
+      return winIMEMessageHandler (hwnd, message, wParam, lParam);
+#endif
 
     default:
       break;

@@ -1,0 +1,87 @@
+#include "../Kinput2.conf"
+
+#ifdef UseWinIME
+#include <Server.tmpl>
+#endif
+
+#ifdef UseWinIME
+         INCLUDES = -I$(SERVERSRC)/hw/xwin \
+		    -I$(XBUILDINCDIR) -I$(FONTINCSRC) \
+		    -I$(SERVERSRC)/fb -I$(SERVERSRC)/mi \
+		    -I$(SERVERSRC)/miext/shadow \
+		    -I$(SERVERSRC)/miext/rootless \
+		    -I$(SERVERSRC)/miext/rootless/safeAlpha \
+		    -I$(SERVERSRC)/include -I$(SERVERSRC)/os  \
+	            -I$(EXTINCSRC) -I$(XINCLUDESRC) \
+		    -I$(SERVERSRC)/render -I$(SERVERSRC)/randr \
+		    -I$(WINDOWSWMLIBSRC) -I$(WINIMELIBSRC) \
+		    -I../include -I..
+
+#else
+         INCLUDES = -I../include -I..
+#endif
+           KI2LIB = ../lib/libKi2.a
+            IMLIB = ../lib/imlib/libim.a
+
+#ifdef UseWnn
+#ifdef UseWnn6
+#ifdef StrlenNeeded
+             DEFW = -DUSE_WNN -DUSE_WNN6 -DNEED_Strlen
+#else
+             DEFW = -DUSE_WNN -DUSE_WNN6
+#endif
+#else
+#ifdef StrlenNeeded
+             DEFW = -DUSE_WNN -DNEED_Strlen
+#else
+             DEFW = -DUSE_WNN
+#endif
+#endif
+#if HasLibCrypt
+             LIBW = $(WNNLIB) -lcrypt
+#else
+             LIBW = $(WNNLIB)
+#endif
+#endif
+#ifdef UseCanna
+             DEFI = -DUSE_CANNA
+             LIBI = $(CANNALIB)
+#endif
+#ifdef UseSj3
+             DEFS = -DUSE_SJ3
+         XSJ3CLIB = ../lib/Xsj3clib/libXsj3clib.a
+             LIBS = $(XSJ3CLIB) $(SJ3LIB)
+#endif
+#ifdef UseAtok
+             DEFS = -DUSE_ATOK
+         XATOKLIB = ../lib/Xatoklib/libXatoklib.a
+             LIBS = $(XATOKLIB) -L$(ATOKLIBDIR) $(ATOKLIB)
+#endif
+#ifdef UseWinIME
+             #if HasShm
+             SHMDEF = -DHAS_SHM
+             #endif
+             MMAPDEF = -DHAS_MMAP
+
+             DEFM = -DUSE_WINIME $(OS_DEFINES) $(SHMDEF) $(MMAPDEF) -DPROJECTROOT="\"$(PROJECTROOT)\"" -DETCX11DIR="\"$(ETCX11DIR)\""
+      WINIMM32LIB = -L$(WINIMESRC) -limm32 -liconv -lgdi32 -lWinIME
+             LIBM = $(WINIMM32LIB) $(WINIMELIB)
+#endif
+
+          DEPLIBS = $(KI2LIB) $(IMLIB) $(XSJ3CLIB) $(XATOKLIB) XawClientDepLibs
+  LOCAL_LIBRARIES = $(KI2LIB) $(IMLIB) $(LIBW) $(LIBI) $(LIBS) $(LIBM) XawClientLibs
+          DEFINES = $(SIGNAL_DEFINES) $(DEFW) $(DEFI) $(DEFS) $(DEFM)
+             SRCS = kinput2.c
+             OBJS = kinput2.o
+
+#ifdef UseWinIME
+NormalLibraryObjectRule()
+NormalLibraryTarget(kinput2,$(OBJS))
+#else
+ComplexProgramTarget(kinput2)
+#endif
+InstallAppDefaults(Kinput2imm32)
+
+#ifdef UseWinIME
+DependTarget()
+#endif

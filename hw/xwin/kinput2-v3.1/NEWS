@@ -1,0 +1,78 @@
+Major changes from version 3.0 to 3.1:
+
+* Kinput2 now supports ATOK.  The source code is kindly contributed
+  by Justsystem Corporation.  Thanks!
+  To compile for Atok, define symbol `UseAtok' in Kinput2.conf.
+
+* Minimum support of Wnn7 is implemented.
+
+* Two IC attributes, XNPreeditState and XNResetState both of which
+  are introduced by X11R6, are supported.
+
+* Kinput2's `egg'-emulation is improved.
+
+* A workaround for bugs in some Xlib implementations has been added.
+
+* Previously, when kinput2 cannot connect to jserver, kinput2 seems
+  to be frozen (actually it keeps retrying).  Now kinput2 beeps and
+  ends conversion in such a case.  The next time you start conversion,
+  it tries to connect again.
+
+
+Major changes from version 2.0 fix4 (the last official release) to
+version 3.0:
+
+* Kinput2 now supports Wnn6.  The source code is kindly contributed by
+  MORIBE, Hideyuki.  Thanks!  To compile for Wnn6, define symbol
+  `UseWnn6' in Kinput2.conf.
+
+  For those who use both Wnn4 and Wnn6, distinct wnn initialization
+  files (wnnenvrc) for Wnn4 jserver and Wnn6 jserver can be specified.
+  Kinput2 checks the server version at run time, and selects an
+  appropriate one.  Use `*.wnnEnvrc4' resource for specifying
+  initialization file for Wnn4, `*.wnnEnvrc6' for Wnn6.
+
+  Due to Wnn6 support, Wnn4 implementation part saw major changes.
+  We've tried to keep user visible changes small, though.
+
+* On-the-spot input style is available for Ximp and XIM protocols.
+  The code is contributed by Kazuki YASUMATSU.  Thank you!
+  For XIM protocol, following styles are now supported:
+  	XIMPreeditPosition | XIMStatusArea (over-the-spot style)
+  	XIMPreeditPosition | XIMStatusNothing (over-the-spot style)
+  	XIMPreeditArea | XIMStatusArea (off-the-spot style)
+	XIMPreeditCallbacks | XIMStatusCallbacks (on-the-spot style)
+	XIMPreeditCallbacks | XIMStatusNothing (on-the-spot style)
+	XIMPreeditNothing | XIMStatusNothing (root-window style)
+
+* Kinput2 now supports an IC attribute called FilterEvents.  Some
+  applications seem to require the input server to support this
+  attribute, or they go crazy if not.
+
+* Finally, word registration facility is available for Wnn.  A new
+  fuction called `register' is added, and bound to F5 and ^T by
+  default. (If you're using ccdef.kinput2.egg, that's F4) This
+  function is supposed to invoke word registration utility called
+  `tkwnnreg'.  You need a separate package for the utility, currently
+  available from:
+	ftp://ftp.sra.co.jp/pub/lang/tcl/contrib/tcl-wnn-X.Y.tar.gz
+  X.Y is 0.3 as of this writing.  It is still alpha-quality, but I'll
+  work on it once I finish release work of kinput2.
+
+* Kinput2's `egg'-emulation has been improved.
+
+* You can specify preedit font and status font independently when XIM
+  protocol is used.  Previously preedit font was used for both preedit
+  area and status area.
+
+* Now kinput2's mode shell (the small status window appeared when
+  over-the-spot input is active) has Mwm hints that says "I need no
+  titlebar".
+
+* A new boolean resource `useOverrideShellForMode' is provided to use
+  overrideShell for the mode displaying widget, instead of the default
+  transientShell.  This is needed for some window managers which
+  ignores kinput2's input focus preference, causing flickering of mode
+  display.
+
+

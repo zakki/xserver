@@ -36,6 +36,14 @@
 static HHOOK g_hhookKeyboardLL = NULL;
 
 /*
+ * References to external symbols
+ */
+
+#ifdef XWIN_WINIME
+extern HWND g_hwndLastKeyPress;
+#endif
+
+/*
  * Function prototypes
  */
 
@@ -117,6 +125,10 @@ winKeyboardMessageHookLL (int iCode, WPARAM wParam, LPARAM lParam)
       lParamKey = lParamKey | (0x80000000 & ((p->flags & LLKHF_UP) << 24));
 
       /* Send message to our main window that has the keyboard focus */
+#ifdef XWIN_WINIME
+      g_hwndLastKeyPress = hwnd;
+      winDebug("  1. g_hwndLastKeyPress = %lX\n", g_hwndLastKeyPress);
+#endif
         PostMessage(hwnd, (UINT) wParam, (WPARAM) p->vkCode, lParamKey);
 
       return 1;
