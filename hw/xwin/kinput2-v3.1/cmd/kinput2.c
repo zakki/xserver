@@ -238,6 +238,7 @@ static IMEProcessedKey *unreg_list = (IMEProcessedKey *) NULL;
 
 IMEProcessedKey* g_key_list = NULL;
 IMEProcessedKey* g_unreg_list = NULL;
+BOOL g_ignore_key = FALSE;
 #endif
 
 int winim_clients = 0;
@@ -691,8 +692,22 @@ TRACE(("    Call XWinIMESelectInput...\n"));	/*YA*/
 			  NULL,			/* No write mask */
 			  NULL,			/* No exception mask */
 			  &tv);			/* timeout = 1sec*/
-	if (iReturn < 0)
+	if (iReturn < 0 && errno != EINTR)
 	{
+	    switch (errno) {
+	    case EBADF:
+		TRACE (("EBADF"));
+		break;
+	    case EINTR:
+		TRACE (("EINTR"));
+		break;
+	    case EINVAL:
+		TRACE (("EINVAL"));
+		break;
+	    case ENOMEM:
+		TRACE (("ENOMEM"));
+		break;
+	    }
 	    TRACE (("Call to select () failed: %d.  Bailing.\n", iReturn));
 	    break;
 	}
@@ -748,6 +763,7 @@ TRACE(("@@ internal Kinput2 exit @@\n"));
     return 0;	/* for lint */
 }
 
+#if 0
 void regImeProcessKeyList(CARD32 time, unsigned int keycode)
 {
     IMEProcessedKey* pitem;
@@ -822,6 +838,7 @@ TRACE(("  Found.\n"));
 TRACE(("  Not Found.\n"));
     return FALSE;
 }
+#endif
 
 // メモリを開放する
 void

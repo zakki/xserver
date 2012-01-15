@@ -1504,6 +1504,9 @@ winWinIMEExtensionInit (void);
 void
 winWinIMESendEvent (int type, unsigned int mask, int kind, int arg, int context, HWND hwnd);
 
+void
+winWinIMESendAll(int type, unsigned int mask, int kind, int arg, HWND hwnd);
+
 int
 winHIMCtoContext (DWORD hIMC);
 
