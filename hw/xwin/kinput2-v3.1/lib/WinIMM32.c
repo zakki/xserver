@@ -244,6 +244,7 @@ static int fAlreadyInitModeStrings = 0;
 // in winglobals.c
 extern DWORD	g_TriggerKeycode;
 extern long	g_TriggerModifier;
+extern BOOL g_ignore_key;
 
 // in kinput2.c
 BOOL findProcessKey(Time time, unsigned int keycode);
@@ -297,7 +298,8 @@ TRACE(("    WinIMM32: InputEvent\n"));	/*YA*/
 
     if (ev->time > LOCALEVENT_MAX)
     {
-	BOOL fProcKey = findProcessKey(ev->time, ev->keycode);
+	BOOL fProcKey = g_ignore_key;
+	g_ignore_key = FALSE;
 	if (fProcKey == TRUE)
 	{
 	    TRACE(("      IME Proccessed Event.\n"));

@@ -464,6 +464,7 @@ DeleteContext(int nContext)
 	  ClearContext(pWIC, TRUE);
 	  ImmDestroyContext (pWIC->hIMC);
 //	  Xfree (pWIC);
+	  pWIC->nContext = -1;
 	}
     }
 #if CYGIME_DEBUG
@@ -1784,6 +1785,25 @@ winWinIMESendEvent (int type, unsigned int mask, int kind, int arg, int context,
       se.time = currentTime.milliseconds;
       se.hwnd = hwnd;
       WriteEventsToClient (client, 1, (xEvent *) &se);
+    }
+}
+
+void
+winWinIMESendAll(int type, unsigned int mask, int kind, int arg, HWND hwnd)
+{
+  WIContextPtr pWIC, pNext = NULL;
+  HIMC hIMC;
+
+  for (pWIC = s_pContextList; pWIC; pWIC = pNext)
+    {
+      pNext = pWIC->pNext;
+
+      winWinIMESendEvent (type,
+			  mask,
+			  kind,
+			  arg,
+			  pWIC->nContext,
+			  hwnd);
     }
 }
 

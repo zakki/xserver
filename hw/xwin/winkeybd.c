@@ -42,6 +42,9 @@
 
 #include "xkbsrv.h"
 
+#define _WINIME_SERVER_
+#include <X11/extensions/winimestr.h>
+
 static Bool g_winKeyState[NUM_KEYCODES];
 
 #ifdef XWIN_WINIME
@@ -502,6 +505,17 @@ winSendKeyEventImpl (DWORD dwKey, Bool fDown, Bool fIme)
 
   GetEventList(&events);
   nevents = GetKeyboardEvents(events, g_pwinKeyboard, fDown ? KeyPress : KeyRelease, dwKey + MIN_KEYCODE);
+
+#ifdef XWIN_WINIME
+  if (fIme)
+    {
+      winWinIMESendAll (WinIMEControllerNotify,
+			WinIMENotifyMask,
+			WinIMEIgnoreNextKey,
+			TRUE,
+			NULL);
+    }
+#endif
 
   for (i = 0; i < nevents; i++)
     mieqEnqueue(g_pwinKeyboard, (InternalEvent*)events[i].event);
