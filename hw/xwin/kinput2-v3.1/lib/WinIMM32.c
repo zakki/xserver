@@ -244,6 +244,7 @@ static int fAlreadyInitModeStrings = 0;
 // in winglobals.c
 extern DWORD	g_TriggerKeycode;
 extern long	g_TriggerModifier;
+extern BOOL g_ignore_key;
 
 // in kinput2.c
 BOOL findProcessKey(Time time, unsigned int keycode);
@@ -289,6 +290,7 @@ InputEvent(Widget w, XEvent *event)
 
 TRACE(("    WinIMM32: InputEvent\n"));	/*YA*/
     /* KeyPress以外は捨てる */
+ErrorF("Key Event(type = %d, time = %ld, keycode = %d ignore = %d).\n", event->type, ev->time, ev->keycode, g_ignore_key);
     if (event->type != KeyPress /*&& event->type != KeyRelease*/)
     {
 	TRACE(("      Not KeyPress Event(type = %d, time = %ld, keycode = %d).\n", event->type, ev->time, ev->keycode));
@@ -297,8 +299,7 @@ TRACE(("    WinIMM32: InputEvent\n"));	/*YA*/
 
     if (ev->time > LOCALEVENT_MAX)
     {
-	BOOL fProcKey = findProcessKey(ev->time, ev->keycode);
-	if (fProcKey == TRUE)
+	if (ev->keycode == 255)
 	{
 	    TRACE(("      IME Proccessed Event.\n"));
 	    return 0;

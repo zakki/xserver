@@ -233,6 +233,7 @@ static IMEProcessedKey *unreg_list = (IMEProcessedKey *) NULL;
 
 IMEProcessedKey* g_key_list = NULL;
 IMEProcessedKey* g_unreg_list = NULL;
+BOOL g_ignore_key = FALSE;
 #endif
 
 int winim_clients = 0;
@@ -668,8 +669,22 @@ TRACE(("    Call XWinIMESelectInput...\n"));	/*YA*/
 			  NULL,			/* No write mask */
 			  NULL,			/* No exception mask */
 			  &tv);			/* timeout = 1sec*/
-	if (iReturn < 0)
+	if (iReturn < 0 && errno != EINTR)
 	{
+	    switch (errno) {
+	    case EBADF:
+		TRACE (("EBADF"));
+		break;
+	    case EINTR:
+		TRACE (("EINTR"));
+		break;
+	    case EINVAL:
+		TRACE (("EINVAL"));
+		break;
+	    case ENOMEM:
+		TRACE (("ENOMEM"));
+		break;
+	    }
 	    TRACE (("Call to select () failed: %d.  Bailing.\n", iReturn));
 	    break;
 	}
@@ -723,81 +738,6 @@ TRACE(("@@ Kinput2 cleanup @@\n\n"));
     g_fIMEStarted = FALSE;
 TRACE(("@@ internal Kinput2 exit @@\n"));
     return 0;	/* for lint */
-}
-
-void regImeProcessKeyList(CARD32 time, unsigned int keycode)
-{
-    IMEProcessedKey* pitem;
-
-TRACE(("regImeProcessKeyList(time = %ld, keycode = %d)\n", time, keycode));
-    // だれもオープンしてなかったら捨て
-    if (winim_clients <= 0)
-    {
-TRACE(("  not opened.\n"));
-	return;
-    }
-
-    // リストに追加
-    if (g_unreg_list != NULL)
-    {
-	pitem = g_unreg_list;
-	g_unreg_list = g_unreg_list->next;
-    } else
-    {
-	pitem = (IMEProcessedKey *) calloc (1, sizeof (IMEProcessedKey));
-    }
-
-    pitem->time = time;
-    pitem->keycode = keycode;
-    pitem->next = g_key_list;
-    g_key_list = pitem;
-}
-
-// 該当するキーイベントを探して、発見したらそれ以降は捨てる
-BOOL
-findProcessKey(Time time, unsigned int keycode)
-{
-    IMEProcessedKey *pitem = g_key_list;
-    IMEProcessedKey *pprev = NULL;
-    IMEProcessedKey *plast = g_unreg_list;
-
-TRACE(("findProcessKey(time = %ld, keycode = %d)\n", time, keycode));
-    while (pitem != NULL)
-    {
-	if ( (pitem->time == time) && (pitem->keycode == keycode) )
-	{
-TRACE(("  Found.\n"));
-	    // g_unreg_list に移す(これ以降のキーイベントはもうこない)
-	    if (pprev == NULL)
-	        g_key_list = NULL;
-	    else
-	        pprev->next = NULL;
-
-	    // とりあえずg_unreg_listの最後までいく
-	    while (plast != NULL)
-	    {
-		if (plast->next == NULL)
-		    break;
-	        plast = plast->next;
-	    }
-
-	    // ここにいらなくなったリストをつなぐ
-	    if (plast == NULL)
-	    {	// ひとつもない
-		pitem->next = g_unreg_list;
-		g_unreg_list = pitem;
-	    } else
-	    {
-		plast->next = pitem;
-	    }
-	    return TRUE;
-	}
-	pprev = pitem;
-	pitem = pitem->next;
-    }
-
-TRACE(("  Not Found.\n"));
-    return FALSE;
 }
 
 // メモリを開放する

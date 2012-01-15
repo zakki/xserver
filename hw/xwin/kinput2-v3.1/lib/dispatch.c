@@ -45,6 +45,7 @@ typedef unsigned short	wchar;
 
 #include "imlib/im.h"
 extern int convJWStoCT();
+extern BOOL g_ignore_key;
 #endif
 
 #define DEBUG_VAR debug_dispatch
@@ -707,6 +708,13 @@ winXIMEXEventHandler (Display * pDisplay, XEvent * event, int ime_event_base, in
 		TRACE (("WinIMEStartComposition %d\n", ime_event->context));
 
 		IMOpenCandidate (ime_event);
+	    }
+		break;
+
+	    case WinIMEIgnoreNextKey:
+	    {
+		TRACE (("WinIMEIgnoreNextKey %d %d\n", ime_event->context, ime_event->arg));
+		g_ignore_key = ime_event->arg;
 	    }
 		break;
 

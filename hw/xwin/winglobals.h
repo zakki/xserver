@@ -91,6 +91,7 @@ extern pthread_mutex_t g_pmTerminating;
 
 #ifdef XWIN_WINIME
 extern Bool			g_fIME;
+extern Bool			g_imeKey;
 #endif
 
 #endif /* WINGLOBALS_H */

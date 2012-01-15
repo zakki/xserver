@@ -42,7 +42,10 @@
 #include "xkbsrv.h"
 #include "dixgrabs.h"
 
-static Bool g_winKeyState[NUM_KEYCODES];
+#define _WINIME_SERVER_
+#include <X11/extensions/winimestr.h>
+
+Bool g_winKeyState[NUM_KEYCODES];
 
 #ifdef XWIN_WINIME
 static DWORD last_dwKeyCode = 0;	// dwKey + MIN_KEYCODE
@@ -499,10 +502,24 @@ winSendKeyEventImpl (DWORD dwKey, Bool fDown, Bool fIme)
 	/* Update the keyState map */
 	g_winKeyState[dwKey] = fDown;
 
+#ifdef XWIN_WINIME
+	winDebug("Win Key Event(type = %d, keycode = %d ifIme = %d).\n", fDown, (int)(dwKey + MIN_KEYCODE), fIme);
+	if (fIme)
+	{
+		QueueKeyboardEvents(g_pwinKeyboard, KeyPress, KEY_UNKNOWN, NULL);
+		QueueKeyboardEvents(g_pwinKeyboard, KeyRelease, KEY_UNKNOWN, NULL);
+		return;
+	}
+#endif
+
+#ifdef XWIN_WINIME
+	g_imeKey = fIme;
+#endif
     QueueKeyboardEvents(g_pwinKeyboard, fDown ? KeyPress : KeyRelease,
                         dwKey + MIN_KEYCODE, NULL);
-
-    winDebug("winSendKeyEvent: dwKey: %d, fDown: %d\n", dwKey, fDown);
+#ifdef XWIN_WINIME
+	g_imeKey = FALSE;
+#endif
 }
 
 void

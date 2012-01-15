@@ -67,6 +67,7 @@
 #define WinIMEStartComposition		2
 #define WinIMEEndComposition		3
 #define WinIMEOpenCand			4
+#define WinIMEIgnoreNextKey		5
 
 /* "args" of WinIMEComposition events */
 #define WinIMECMPCompReadStr 1

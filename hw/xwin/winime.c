@@ -464,6 +464,7 @@ DeleteContext(int nContext)
 	  ClearContext(pWIC, TRUE);
 	  ImmDestroyContext (pWIC->hIMC);
 //	  Xfree (pWIC);
+	  pWIC->nContext = -1;
 	}
     }
 #if CYGIME_DEBUG

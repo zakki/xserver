@@ -121,6 +121,9 @@ struct _DeviceEvent {
     int corestate;    /**< Core key/button state BEFORE the event */
     int key_repeat;   /**< Internally-generated key repeat event */
     uint32_t flags;   /**< Flags to be copied into the generated event */
+#ifdef XWIN_WINIME
+    uint8_t key_ime;   /**< Windows IME processed key */
+#endif
 };
 
 /**

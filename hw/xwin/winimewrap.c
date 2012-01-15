@@ -59,7 +59,7 @@
 #ifndef XFree86Server
 #define XFree86Server
 #endif
-#include "winms.h">
+#include "winms.h"
 #undef XFree86Server
 
 /* for WINIME extension */
@@ -84,7 +84,8 @@ extern Bool		g_fIME;
 extern CARD32		g_c32LastInputEventTime;
 extern DWORD		g_TriggerKeycode;
 extern long		g_TriggerModifier;
-extern char *display;
+extern char		*display;
+extern Bool		g_winKeyState[NUM_KEYCODES];
 
 /*
  *
@@ -389,6 +390,9 @@ SendImeKey (void)
     CARD32	cur_time = 0;
     DWORD	dwKeyCode = 0;
     long	modifier = 0;
+    BOOL	shiftPress = FALSE;
+    BOOL	altPress = FALSE;
+    BOOL	ctrlPress = FALSE;
     int i;
 
     ErrorF("%s()\n", __FUNCTION__);
@@ -409,138 +413,42 @@ SendImeKey (void)
     }
 
     xCurrentEvent.u.u.type = KeyPress;
-    if (g_TriggerModifier & ShiftMask)
+    if ((g_TriggerModifier & ShiftMask) && !g_winKeyState[KEY_ShiftL])
     {
 	winDebug("  hit Shift\n");
-/*
-	xCurrentEvent.u.u.detail = 50;
-	//mieqEnqueue (&xCurrentEvent);
-	DeviceIntPtr pDev;
-	for (pDev = inputInfo.devices; pDev; pDev = pDev->next)
-	{
-	    if ((pDev->coreEvents && pDev != inputInfo.keyboard) && pDev->key)
-	    {
-		mieqEnqueue (pDev, &xCurrentEvent);
-	    }
-	}
-*/
+	shiftPress = TRUE;
 	winSendKeyEvent (KEY_ShiftL, TRUE);
     }
 
-    if (g_TriggerModifier & ControlMask)
+    if ((g_TriggerModifier & ControlMask) && !g_winKeyState[KEY_LCtrl])
     {
 	winDebug("  hit Control\n");
-/*
-	xCurrentEvent.u.u.detail = 37;
-	DeviceIntPtr pDev;
-	for (pDev = inputInfo.devices; pDev; pDev = pDev->next)
-	{
-	    if ((pDev->coreEvents && pDev != inputInfo.keyboard) && pDev->key)
-	    {
-		mieqEnqueue (pDev, &xCurrentEvent);
-	    }
-	}
-*/
+	ctrlPress = TRUE;
 	winSendKeyEvent (KEY_LCtrl, TRUE);
     }
 
-    if (g_TriggerModifier & AltMask)
+    if ((g_TriggerModifier & AltMask) && !g_winKeyState[KEY_Alt])
     {
 	winDebug("  hit Alt\n");
-/*
-	xCurrentEvent.u.u.detail = 64;
-	DeviceIntPtr pDev;
-	for (pDev = inputInfo.devices; pDev; pDev = pDev->next)
-	{
-	    if ((pDev->coreEvents && pDev != inputInfo.keyboard) && pDev->key)
-	    {
-		mieqEnqueue (pDev, &xCurrentEvent);
-	    }
-	}
-*/
+	altPress = TRUE;
 	winSendKeyEvent (KEY_Alt, TRUE);
     }
 
-    {
-/*
-	xCurrentEvent.u.u.detail = g_TriggerKeycode;
-	DeviceIntPtr pDev;
-	for (pDev = inputInfo.devices; pDev; pDev = pDev->next)
-	    if ((pDev->coreEvents && pDev != inputInfo.keyboard) && pDev->key)
-	    {
-		mieqEnqueue (pDev, &xCurrentEvent);
-	    }
-*/
-	winSendKeyEvent (g_TriggerKeycode - MIN_KEYCODE, TRUE);
-    }
-/*
-    cur_time = GetTickCount ();
-    if (cur_time <= LOCALEVENT_MAX)	// LOCALEVENT_MAX
-	cur_time = LOCALEVENT_MAX + 1;
+    winSendKeyEvent (g_TriggerKeycode - MIN_KEYCODE, TRUE);
+    winSendKeyEvent (g_TriggerKeycode - MIN_KEYCODE, FALSE);
 
-    xCurrentEvent.u.keyButtonPointer.time =
-	g_c32LastInputEventTime = cur_time;
-
-    xCurrentEvent.u.u.type = KeyRelease;
-*/
+    if ((g_TriggerModifier & AltMask) && altPress)
     {
-/*
-	xCurrentEvent.u.u.detail = g_TriggerKeycode;
-	DeviceIntPtr pDev;
-	for (pDev = inputInfo.devices; pDev; pDev = pDev->next)
-	{
-	    if ((pDev->coreEvents && pDev != inputInfo.keyboard) && pDev->key)
-	    {
-		mieqEnqueue (pDev, &xCurrentEvent);
-	    }
-	}
-*/
-	winSendKeyEvent (g_TriggerKeycode - MIN_KEYCODE, FALSE);
-    }
-
-    if (g_TriggerModifier & AltMask)
-    {
-/*
-	xCurrentEvent.u.u.detail = 64;
-	DeviceIntPtr pDev;
-	for (pDev = inputInfo.devices; pDev; pDev = pDev->next)
-	    if ((pDev->coreEvents && pDev != inputInfo.keyboard) && pDev->key)
-	    {
-		mieqEnqueue (pDev, &xCurrentEvent);
-	    }
-*/
 	winSendKeyEvent (KEY_Alt, FALSE);
     }
 
-    if (g_TriggerModifier & ControlMask)
+    if ((g_TriggerModifier & ControlMask) && ctrlPress)
     {
-/*
-	xCurrentEvent.u.u.detail = 37;
-	DeviceIntPtr pDev;
-	for (pDev = inputInfo.devices; pDev; pDev = pDev->next)
-	{
-	    if ((pDev->coreEvents && pDev != inputInfo.keyboard) && pDev->key)
-	    {
-		mieqEnqueue (pDev, &xCurrentEvent);
-	    }
-	}
-*/
 	winSendKeyEvent (KEY_LCtrl, FALSE);
     }
 
-    if (g_TriggerModifier & ShiftMask)
+    if ((g_TriggerModifier & ShiftMask) && shiftPress)
     {
-/*
-	xCurrentEvent.u.u.detail = 50;
-	DeviceIntPtr pDev;
-	for (pDev = inputInfo.devices; pDev; pDev = pDev->next)
-	{
-	    if ((pDev->coreEvents && pDev != inputInfo.keyboard) && pDev->key)
-	    {
-		mieqEnqueue (pDev, &xCurrentEvent);
-	    }
-	}
-*/
 	winSendKeyEvent (KEY_ShiftL, FALSE);
     }
 }
