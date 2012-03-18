@@ -82,6 +82,14 @@ GetEventList(EventListPtr* list)
     return InputEventListLen;
 }
 
+
+#ifdef XWIN_WINIME
+/**
+ * FIXME
+ */
+extern Bool g_imeKey;
+#endif
+
 /**
  * Pick some arbitrary size for Xi motion history.
  */
@@ -1006,6 +1014,10 @@ GetKeyboardValuatorEvents(EventList *events, DeviceIntPtr pDev, int type,
     clipValuators(pDev, &mask);
 
     set_valuators(pDev, event, &mask);
+
+#ifdef XWIN_WINIME
+    event->key_ime = g_imeKey;
+#endif
 
     return num_events;
 }

@@ -517,8 +517,14 @@ winSendKeyEventImpl (DWORD dwKey, Bool fDown, Bool fIme)
     }
 #endif
 
+#ifdef XWIN_WINIME
+  g_imeKey = fIme;
+#endif
   for (i = 0; i < nevents; i++)
     mieqEnqueue(g_pwinKeyboard, (InternalEvent*)events[i].event);
+#ifdef XWIN_WINIME
+  g_imeKey = FALSE;
+#endif
 
   winDebug("winSendKeyEvent: dwKey: %d, fDown: %d, nEvents %d\n",
            dwKey, fDown, nevents);
