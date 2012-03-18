@@ -48,7 +48,6 @@
 #include <X11/X.h>
 #include <X11/Xatom.h>
 #include <X11/Xlib.h>
-#include <X11/Xlocale.h>
 #include <X11/Xproto.h>
 #include <X11/Xutil.h>
 #include <X11/cursorfont.h>
@@ -62,6 +61,14 @@
 #include "window.h"
 #include "pixmapstr.h"
 #include "windowstr.h"
+#include "winglobals.h"
+
+#include <shlwapi.h>
+
+#define INITGUID
+#include "initguid.h"
+#include "taskbar.h"
+#undef INITGUID
 
 #ifdef XWIN_MULTIWINDOWEXTWM
 #include <X11/extensions/windowswmstr.h>
@@ -136,7 +143,6 @@ typedef struct _XMsgProcArgRec {
  * References to external symbols
  */
 
-extern char *display;
 extern void ErrorF (const char* /*f*/, ...);
 
 /*
@@ -153,7 +159,7 @@ static Bool
 InitQueue (WMMsgQueuePtr pQueue);
 
 static void
-GetWindowName (Display * pDpy, Window iWin, wchar_t **ppName);
+GetWindowName (Display * pDpy, Window iWin, char **ppWindowName);
 
 static int
 SendXMessage (Display *pDisplay, Window iWin, Atom atmType, long nData);
@@ -178,6 +184,9 @@ winMultiWindowXMsgProcErrorHandler (Display *pDisplay, XErrorEvent *pErr);
 
 static int
 winMultiWindowXMsgProcIOErrorHandler (Display *pDisplay);
+
+static void
+winMultiWindowThreadExit(void *arg);
 
 static int
 winRedirectErrorHandler (Display *pDisplay, XErrorEvent *pErr);
@@ -204,10 +213,18 @@ winUpdateWindowPosition (HWND hWnd, Bool reshape, HWND *zstyle);
  */
 
 static jmp_buf			g_jmpWMEntry;
+static XIOErrorHandler g_winMultiWindowWMOldIOErrorHandler;
+static pthread_t g_winMultiWindowWMThread;
 static jmp_buf			g_jmpXMsgProcEntry;
+static XIOErrorHandler g_winMultiWindowXMsgProcOldIOErrorHandler;
+static pthread_t g_winMultiWindowXMsgProcThread;
 static Bool			g_shutdown = FALSE;
 static Bool			redirectError = FALSE;
 static Bool			g_fAnotherWMRunning = FALSE;
+static HMODULE      g_hmodShell32Dll = NULL;
+static HMODULE      g_hmodOle32Dll = NULL;
+static SHGETPROPERTYSTOREFORWINDOWPROC g_pSHGetPropertyStoreForWindow = NULL;
+static PROPVARIANTCLEARPROC g_pPropVariantClear = NULL;
 
 /*
  * PushMessage - Push a message onto the queue
@@ -391,49 +408,78 @@ InitQueue (WMMsgQueuePtr pQueue)
   pQueue->nQueueSize = 0;
 
 #if CYGMULTIWINDOW_DEBUG
-  ErrorF ("InitQueue - Queue Size %d %d\n", pQueue->nQueueSize,
-	  QueueSize(pQueue));
+  winDebug ("InitQueue - Queue Size %d %d\n", pQueue->nQueueSize, QueueSize(pQueue));
 #endif
 
-  ErrorF ("InitQueue - Calling pthread_mutex_init\n");
+  winDebug ("InitQueue - Calling pthread_mutex_init\n");
 
   /* Create synchronization objects */
   pthread_mutex_init (&pQueue->pmMutex, NULL);
 
-  ErrorF ("InitQueue - pthread_mutex_init returned\n");
-  ErrorF ("InitQueue - Calling pthread_cond_init\n");
+  winDebug ("InitQueue - pthread_mutex_init returned\n");
+  winDebug ("InitQueue - Calling pthread_cond_init\n");
 
   pthread_cond_init (&pQueue->pcNotEmpty, NULL);
 
-  ErrorF ("InitQueue - pthread_cond_init returned\n");
+  winDebug ("InitQueue - pthread_cond_init returned\n");
 
   return TRUE;
 }
 
+static
+char *Xutf8TextPropertyToString(Display *pDisplay, XTextProperty *xtp)
+{
+  int nNum;
+  char **ppList;
+  char *pszReturnData;
+
+  if (Xutf8TextPropertyToTextList (pDisplay, xtp, &ppList, &nNum) >= Success && nNum > 0 && *ppList)
+    {
+      int i;
+      int iLen = 0;
+
+      for (i = 0; i < nNum; i++)
+        iLen += strlen(ppList[i]);
+      pszReturnData = (char *) malloc (iLen + 1);
+      pszReturnData[0] = '\0';
+      for (i = 0; i < nNum; i++)
+        strcat (pszReturnData, ppList[i]);
+      if (ppList)
+        XFreeStringList (ppList);
+    }
+  else
+    {
+      pszReturnData = (char *) malloc (1);
+      pszReturnData[0] = '\0';
+    }
+
+  return pszReturnData;
+}
 
 /*
  * GetWindowName - Retrieve the title of an X Window
  */
 
 static void
-GetWindowName (Display *pDisplay, Window iWin, wchar_t **ppName)
+GetWindowName (Display *pDisplay, Window iWin, char **ppWindowName)
 {
-  int			nResult, nNum;
-  char			**ppList;
-  char			*pszReturnData;
-  int			iLen, i;
-  XTextProperty		xtpName;
-  
+  int nResult;
+  XTextProperty	xtpWindowName;
+  XTextProperty xtpClientMachine;
+  char *pszWindowName;
+  char *pszClientMachine;
+  char hostname[HOST_NAME_MAX + 1];
+
 #if CYGMULTIWINDOW_DEBUG
   ErrorF ("GetWindowName\n");
 #endif
 
-  /* Intialize ppName to NULL */
-  *ppName = NULL;
+  /* Intialize ppWindowName to NULL */
+  *ppWindowName = NULL;
 
-  /* Try to get --- */
-  nResult = XGetWMName (pDisplay, iWin, &xtpName);
-  if (!nResult || !xtpName.value || !xtpName.nitems)
+  /* Try to get window name */
+  nResult = XGetWMName (pDisplay, iWin, &xtpWindowName);
+  if (!nResult || !xtpWindowName.value || !xtpWindowName.nitems)
     {
 #if CYGMULTIWINDOW_DEBUG
       ErrorF ("GetWindowName - XGetWMName failed.  No name.\n");
@@ -441,29 +487,43 @@ GetWindowName (Display *pDisplay, Window iWin, wchar_t **ppName)
       return;
     }
 
-   if (Xutf8TextPropertyToTextList (pDisplay, &xtpName, &ppList, &nNum) >= Success && nNum > 0 && *ppList)
-   {
- 	iLen = 0;
- 	for (i = 0; i < nNum; i++) iLen += strlen(ppList[i]);
- 	pszReturnData = (char *) malloc (iLen + 1);
- 	pszReturnData[0] = '\0';
- 	for (i = 0; i < nNum; i++) strcat (pszReturnData, ppList[i]);
- 	if (ppList) XFreeStringList (ppList);
-   }
-   else
-   {
- 	pszReturnData = (char *) malloc (1);
- 	pszReturnData[0] = '\0';
-   }
-   iLen = MultiByteToWideChar (CP_UTF8, 0, pszReturnData, -1, NULL, 0);
-   *ppName = (wchar_t*)malloc(sizeof(wchar_t)*(iLen + 1));
-   MultiByteToWideChar (CP_UTF8, 0, pszReturnData, -1, *ppName, iLen);
-   XFree (xtpName.value);
-   free (pszReturnData);
+  pszWindowName = Xutf8TextPropertyToString(pDisplay, &xtpWindowName);
+  XFree(xtpWindowName.value);
 
-#if CYGMULTIWINDOW_DEBUG
-  ErrorF ("GetWindowName - Returning\n");
-#endif
+  if (g_fHostInTitle)
+    {
+      /* Try to get client machine name */
+      nResult = XGetWMClientMachine(pDisplay, iWin, &xtpClientMachine);
+      if (nResult && xtpClientMachine.value && xtpClientMachine.nitems)
+        {
+          pszClientMachine = Xutf8TextPropertyToString(pDisplay, &xtpClientMachine);
+          XFree(xtpClientMachine.value);
+
+          /*
+            If we have a client machine name
+            and it's not the local host name...
+          */
+          if (strlen(pszClientMachine) &&
+              !gethostname(hostname, HOST_NAME_MAX + 1) &&
+              strcmp (hostname, pszClientMachine))
+            {
+              /* ... add ' (on <clientmachine>)' to end of window name */
+              *ppWindowName = malloc(strlen(pszWindowName) + strlen(pszClientMachine) + 7);
+              strcpy(*ppWindowName, pszWindowName);
+              strcat(*ppWindowName, " (on ");
+              strcat(*ppWindowName, pszClientMachine);
+              strcat(*ppWindowName, ")");
+
+              free(pszWindowName);
+              free(pszClientMachine);
+
+              return;
+            }
+        }
+    }
+
+  /* otherwise just return the window name */
+  *ppWindowName = pszWindowName;
 }
 
 
@@ -496,7 +556,6 @@ SendXMessage (Display *pDisplay, Window iWin, Atom atmType, long nData)
 static void
 UpdateName (WMInfoPtr pWMInfo, Window iWindow)
 {
-  wchar_t		*pszName;
   Atom			atmType;
   int			fmtRet;
   unsigned long		items, remain;
@@ -525,26 +584,33 @@ UpdateName (WMInfoPtr pWMInfo, Window iWindow)
 	  XFree (retHwnd);
 	}
     }
-  
+
   /* Some sanity checks */
   if (!hWnd) return;
   if (!IsWindow (hWnd)) return;
 
-  /* Set the Windows window name */
-  GetWindowName (pWMInfo->pDisplay, iWindow, &pszName);
-  if (pszName)
+  /* If window isn't override-redirect */
+  XGetWindowAttributes (pWMInfo->pDisplay, iWindow, &attr);
+  if (!attr.override_redirect)
     {
-      /* Get the window attributes */
-      XGetWindowAttributes (pWMInfo->pDisplay,
-			    iWindow,
-			    &attr);
-      if (!attr.override_redirect)
-	{
-	  SetWindowTextW (hWnd, pszName);
-	  winUpdateIcon (iWindow);
-	}
+      char *pszWindowName;
+      /* Get the X windows window name */
+      GetWindowName (pWMInfo->pDisplay, iWindow, &pszWindowName);
 
-      free (pszName);
+      if (pszWindowName)
+        {
+          /* Convert from UTF-8 to wide char */
+          int iLen = MultiByteToWideChar (CP_UTF8, 0, pszWindowName, -1, NULL, 0);
+          wchar_t *pwszWideWindowName = (wchar_t*)malloc(sizeof(wchar_t)*(iLen + 1));
+          MultiByteToWideChar (CP_UTF8, 0, pszWindowName, -1, pwszWideWindowName, iLen);
+
+          /* Set the Windows window name */
+          SetWindowTextW (hWnd, pwszWideWindowName);
+          winUpdateIcon (iWindow);
+
+          free (pwszWideWindowName);
+          free (pszWindowName);
+        }
     }
 }
 
@@ -626,6 +692,8 @@ winMultiWindowWMProc (void *pArg)
 {
   WMProcArgPtr		pProcArg = (WMProcArgPtr)pArg;
   WMInfoPtr		pWMInfo = pProcArg->pWMInfo;
+
+  pthread_cleanup_push(&winMultiWindowThreadExit, NULL);
   
   /* Initialize the Window Manager */
   winInitMultiWindowWM (pWMInfo, pProcArg);
@@ -838,6 +906,9 @@ winMultiWindowWMProc (void *pArg)
 #if CYGMULTIWINDOW_DEBUG
   ErrorF("-winMultiWindowWMProc ()\n");
 #endif
+
+  pthread_cleanup_pop(0);
+
   return NULL;
 }
 
@@ -860,7 +931,9 @@ winMultiWindowXMsgProc (void *pArg)
   int			iReturn;
   XIconSize		*xis;
 
-  ErrorF ("winMultiWindowXMsgProc - Hello\n");
+  pthread_cleanup_push(&winMultiWindowThreadExit, NULL);
+
+  winDebug ("winMultiWindowXMsgProc - Hello\n");
 
   /* Check that argument pointer is not invalid */
   if (pProcArg == NULL)
@@ -883,27 +956,19 @@ winMultiWindowXMsgProc (void *pArg)
 
   ErrorF ("winMultiWindowXMsgProc - pthread_mutex_lock () returned.\n");
 
-  /* Allow multiple threads to access Xlib */
-  if (XInitThreads () == 0)
-    {
-      ErrorF ("winMultiWindowXMsgProc - XInitThreads () failed.  Exiting.\n");
-      pthread_exit (NULL);
-    }
-
-  /* See if X supports the current locale */
-  if (XSupportsLocale () == False)
-    {
-      ErrorF ("winMultiWindowXMsgProc - Warning: locale not supported by X\n");
-    }
-
   /* Release the server started mutex */
   pthread_mutex_unlock (pProcArg->ppmServerStarted);
 
   ErrorF ("winMultiWindowXMsgProc - pthread_mutex_unlock () returned.\n");
 
+  /* Install our error handler */
+  XSetErrorHandler (winMultiWindowXMsgProcErrorHandler);
+  g_winMultiWindowXMsgProcThread = pthread_self();
+  g_winMultiWindowXMsgProcOldIOErrorHandler = XSetIOErrorHandler (winMultiWindowXMsgProcIOErrorHandler);
+
   /* Set jump point for IO Error exits */
   iReturn = setjmp (g_jmpXMsgProcEntry);
-  
+
   /* Check if we should continue operations */
   if (iReturn != WIN_JMP_ERROR_IO
       && iReturn != WIN_JMP_OKAY)
@@ -919,13 +984,8 @@ winMultiWindowXMsgProc (void *pArg)
       pthread_exit (NULL);
     }
 
-  /* Install our error handler */
-  XSetErrorHandler (winMultiWindowXMsgProcErrorHandler);
-  XSetIOErrorHandler (winMultiWindowXMsgProcIOErrorHandler);
-
   /* Setup the display connection string x */
-  snprintf (pszDisplay,
-	    512, "127.0.0.1:%s.%d", display, (int)pProcArg->dwScreen);
+  winGetDisplayName(pszDisplay, (int)pProcArg->dwScreen);
 
   /* Print the display connection string */
   ErrorF ("winMultiWindowXMsgProc - DISPLAY=%s\n", pszDisplay);
@@ -1176,7 +1236,7 @@ winMultiWindowXMsgProc (void *pArg)
     }
 
   XCloseDisplay (pProcArg->pDisplay);
-  pthread_exit (NULL);
+  pthread_cleanup_pop(0);
   return NULL;
 }
 
@@ -1267,7 +1327,7 @@ winInitMultiWindowWM (WMInfoPtr pWMInfo, WMProcArgPtr pProcArg)
   char			pszDisplay[512];
   int			iReturn;
 
-  ErrorF ("winInitMultiWindowWM - Hello\n");
+  winDebug ("winInitMultiWindowWM - Hello\n");
 
   /* Check that argument pointer is not invalid */
   if (pProcArg == NULL)
@@ -1290,27 +1350,19 @@ winInitMultiWindowWM (WMInfoPtr pWMInfo, WMProcArgPtr pProcArg)
 
   ErrorF ("winInitMultiWindowWM - pthread_mutex_lock () returned.\n");
 
-  /* Allow multiple threads to access Xlib */
-  if (XInitThreads () == 0)
-    {
-      ErrorF ("winInitMultiWindowWM - XInitThreads () failed.  Exiting.\n");
-      pthread_exit (NULL);
-    }
-
-  /* See if X supports the current locale */
-  if (XSupportsLocale () == False)
-    {
-      ErrorF ("winInitMultiWindowWM - Warning: Locale not supported by X.\n");
-    }
-
   /* Release the server started mutex */
   pthread_mutex_unlock (pProcArg->ppmServerStarted);
 
   ErrorF ("winInitMultiWindowWM - pthread_mutex_unlock () returned.\n");
 
+  /* Install our error handler */
+  XSetErrorHandler (winMultiWindowWMErrorHandler);
+  g_winMultiWindowWMThread = pthread_self();
+  g_winMultiWindowWMOldIOErrorHandler = XSetIOErrorHandler (winMultiWindowWMIOErrorHandler);
+
   /* Set jump point for IO Error exits */
   iReturn = setjmp (g_jmpWMEntry);
-  
+
   /* Check if we should continue operations */
   if (iReturn != WIN_JMP_ERROR_IO
       && iReturn != WIN_JMP_OKAY)
@@ -1326,16 +1378,8 @@ winInitMultiWindowWM (WMInfoPtr pWMInfo, WMProcArgPtr pProcArg)
       pthread_exit (NULL);
     }
 
-  /* Install our error handler */
-  XSetErrorHandler (winMultiWindowWMErrorHandler);
-  XSetIOErrorHandler (winMultiWindowWMIOErrorHandler);
-
   /* Setup the display connection string x */
-  snprintf (pszDisplay,
-	    512,
-	    "127.0.0.1:%s.%d",
-	    display,
-	    (int) pProcArg->dwScreen);
+  winGetDisplayName(pszDisplay, (int)pProcArg->dwScreen);
 
   /* Print the display connection string */
   ErrorF ("winInitMultiWindowWM - DISPLAY=%s\n", pszDisplay);
@@ -1456,12 +1500,18 @@ winMultiWindowWMIOErrorHandler (Display *pDisplay)
 {
   ErrorF ("winMultiWindowWMIOErrorHandler!\n\n");
 
-  if (g_shutdown)
-    pthread_exit(NULL);
+  if (pthread_equal(pthread_self(),g_winMultiWindowWMThread))
+    {
+      if (g_shutdown)
+        pthread_exit(NULL);
 
-  /* Restart at the main entry point */
-  longjmp (g_jmpWMEntry, WIN_JMP_ERROR_IO);
-  
+      /* Restart at the main entry point */
+      longjmp (g_jmpWMEntry, WIN_JMP_ERROR_IO);
+    }
+
+  if (g_winMultiWindowWMOldIOErrorHandler)
+    g_winMultiWindowWMOldIOErrorHandler(pDisplay);
+
   return 0;
 }
 
@@ -1496,12 +1546,28 @@ winMultiWindowXMsgProcIOErrorHandler (Display *pDisplay)
 {
   ErrorF ("winMultiWindowXMsgProcIOErrorHandler!\n\n");
 
-  /* Restart at the main entry point */
-  longjmp (g_jmpXMsgProcEntry, WIN_JMP_ERROR_IO);
-  
+  if (pthread_equal(pthread_self(),g_winMultiWindowXMsgProcThread))
+    {
+      /* Restart at the main entry point */
+      longjmp (g_jmpXMsgProcEntry, WIN_JMP_ERROR_IO);
+    }
+
+  if (g_winMultiWindowXMsgProcOldIOErrorHandler)
+    g_winMultiWindowXMsgProcOldIOErrorHandler(pDisplay);
+
   return 0;
 }
 
+/*
+ * winMultiWindowThreadExit - Thread exit handler
+ */
+
+static void
+winMultiWindowThreadExit(void *arg)
+{
+  /* multiwindow client thread has exited, stop server as well */
+  kill(getpid(), SIGTERM);
+}
 
 /*
  * Catch RedirectError to detect other window manager running
@@ -1562,6 +1628,8 @@ winDeinitMultiWindowWM (void)
 #define HINT_SIZEBOX	(1l<<2)
 #define HINT_CAPTION	(1l<<3)
 #define HINT_NOMAXIMIZE (1L<<4)
+#define HINT_NOMINIMIZE (1L<<5)
+#define HINT_NOSYSMENU  (1L<<6)
 /* These two are used on their own */
 #define HINT_MAX	(1L<<0)
 #define HINT_MIN	(1L<<1)
@@ -1620,6 +1688,16 @@ winApplyHints (Display *pDisplay, Window iWindow, HWND hWnd, HWND *zstyle)
 	if (mwm_hint->decorations & MwmDecorBorder) hint |= HINT_BORDER;
 	if (mwm_hint->decorations & MwmDecorHandle) hint |= HINT_SIZEBOX;
 	if (mwm_hint->decorations & MwmDecorTitle) hint |= HINT_CAPTION;
+	if (!(mwm_hint->decorations & MwmDecorMenu)) hint |= HINT_NOSYSMENU;
+	if (!(mwm_hint->decorations & MwmDecorMinimize)) hint |= HINT_NOMINIMIZE;
+	if (!(mwm_hint->decorations & MwmDecorMaximize)) hint |= HINT_NOMAXIMIZE;
+      }
+      else
+      {
+        /*
+           MwmDecorAll means all decorations *except* those specified by other flag
+           bits that are set.  Not yet implemented.
+        */
       }
     }
     if (mwm_hint) XFree(mwm_hint);
@@ -1667,10 +1745,14 @@ winApplyHints (Display *pDisplay, Window iWindow, HWND hWnd, HWND *zstyle)
     XFree(normal_hint);
   }
 
-  /* Override hint settings from above with settings from config file */
+  /*
+    Override hint settings from above with settings from config file and set
+    application id for grouping.
+  */
   {
     XClassHint class_hint = {0,0};
     char *window_name = 0;
+    char *application_id = 0;
 
     if (XGetClassHint(pDisplay, iWindow, &class_hint))
       {
@@ -1678,8 +1760,21 @@ winApplyHints (Display *pDisplay, Window iWindow, HWND hWnd, HWND *zstyle)
 
         style = winOverrideStyle(class_hint.res_name, class_hint.res_class, window_name);
 
+#define APPLICATION_ID_FORMAT	"%s.xwin.%s"
+#define APPLICATION_ID_UNKNOWN "unknown"
+        if (class_hint.res_class)
+          {
+            asprintf (&application_id, APPLICATION_ID_FORMAT, XVENDORNAME, class_hint.res_class);
+          }
+        else
+          {
+            asprintf (&application_id, APPLICATION_ID_FORMAT, XVENDORNAME, APPLICATION_ID_UNKNOWN);
+          }
+        winSetAppID (hWnd, application_id);
+
         if (class_hint.res_name) XFree(class_hint.res_name);
         if (class_hint.res_class) XFree(class_hint.res_class);
+        if (application_id) free(application_id);
         if (window_name) XFree(window_name);
       }
     else
@@ -1717,6 +1812,12 @@ winApplyHints (Display *pDisplay, Window iWindow, HWND hWnd, HWND *zstyle)
 
   if (hint & HINT_NOMAXIMIZE)
     style = style & ~WS_MAXIMIZEBOX;
+
+  if (hint & HINT_NOMINIMIZE)
+    style = style & ~WS_MINIMIZEBOX;
+
+  if (hint & HINT_NOSYSMENU)
+    style = style & ~WS_SYSMENU;
 
   SetWindowLongPtr (hWnd, GWL_STYLE, style);
 }
@@ -1784,4 +1885,101 @@ winUpdateWindowPosition (HWND hWnd, Bool reshape, HWND *zstyle)
     winReshapeMultiWindow(pWin);
     winUpdateRgnMultiWindow(pWin);
   }
+}
+
+void
+winTaskbarInit (void)
+{
+  /*
+    Load libraries and get function pointers to SHGetPropertyStoreForWindow
+    and PropVariantClear for winSetAppID()
+  */
+
+  /*
+    SHGetPropertyStoreForWindow is only supported since Windows 7. On previous
+    versions the pointer will be NULL and taskbar grouping is not supported.
+    winSetAppID() will do nothing in this case.
+  */
+  g_hmodShell32Dll = LoadLibrary ("shell32.dll");
+  if (g_hmodShell32Dll == NULL)
+    {
+      ErrorF ("winTaskbarInit - Could not load shell32.dll\n");
+      return;
+    }
+
+  g_pSHGetPropertyStoreForWindow = (SHGETPROPERTYSTOREFORWINDOWPROC) GetProcAddress (g_hmodShell32Dll, "SHGetPropertyStoreForWindow");
+  if (g_pSHGetPropertyStoreForWindow == NULL)
+    {
+      ErrorF ("winTaskbarInit - Could not get SHGetPropertyStoreForWindow address\n");
+      return;
+    }
+
+  /*
+    PropVariantClear is supported since NT4, but we have no propidl.h to
+    provide a prototype for it
+  */
+  g_hmodOle32Dll = LoadLibrary ("ole32.dll");
+  if (g_hmodOle32Dll == NULL)
+    {
+      ErrorF ("winTaskbarInit - Could not load ole32.dll\n");
+      return;
+    }
+
+  g_pPropVariantClear = (PROPVARIANTCLEARPROC) GetProcAddress (g_hmodOle32Dll, "PropVariantClear");
+  if (g_pPropVariantClear == NULL)
+    {
+      ErrorF ("winTaskbarInit - Could not get g_pPropVariantClear address\n");
+      return;
+    }
+}
+
+void
+winTaskbarDestroy (void)
+{
+  if (g_hmodOle32Dll != NULL)
+    {
+      FreeLibrary (g_hmodOle32Dll);
+      g_hmodOle32Dll = NULL;
+      g_pPropVariantClear = NULL;
+    }
+  if (g_hmodShell32Dll != NULL)
+    {
+      FreeLibrary (g_hmodShell32Dll);
+      g_hmodShell32Dll = NULL;
+      g_pSHGetPropertyStoreForWindow = NULL;
+    }
+}
+
+void
+winSetAppID (HWND hWnd, const char* AppID)
+{
+  PROPVARIANT pv;
+  IPropertyStore *pps = NULL;
+  HRESULT hr;
+
+  if (g_pSHGetPropertyStoreForWindow == NULL ||
+      g_pPropVariantClear == NULL)
+    {
+      return;
+    }
+
+  winDebug ("winSetAppID - hwnd 0x%08x appid '%s'\n", hWnd, AppID);
+
+  hr = g_pSHGetPropertyStoreForWindow (hWnd, &IID_IPropertyStore, (void**)&pps);
+  if(SUCCEEDED(hr) && pps)
+    {
+      memset(&pv, 0, sizeof(PROPVARIANT));
+      if(AppID)
+        {
+          pv.vt = VT_LPWSTR;
+          hr = SHStrDupA(AppID, &pv.pwszVal);
+        }
+
+      if(SUCCEEDED(hr))
+        {
+          hr = pps->lpVtbl->SetValue(pps, &PKEY_AppUserModel_ID, &pv);
+          g_pPropVariantClear(&pv);
+        }
+      pps->lpVtbl->Release(pps);
+    }
 }

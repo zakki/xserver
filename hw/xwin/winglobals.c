@@ -76,15 +76,9 @@ Bool		g_fKeyboardHookLL = FALSE;
 Bool		g_fNoHelpMessageBox = FALSE;
 Bool		g_fSoftwareCursor = FALSE;
 Bool		g_fSilentDupError = FALSE;
-Bool            g_fNativeGl = FALSE;
-
-/*
- * Global variables for dynamically loaded libraries and
- * their function pointers
- */
-
-FARPROC		g_fpTrackMouseEvent = (FARPROC) (void (*)(void))NoopDDA;
-
+Bool            g_fNativeGl = TRUE;
+Bool            g_fHostInTitle = FALSE;
+pthread_mutex_t g_pmTerminating = PTHREAD_MUTEX_INITIALIZER;
 
 #ifdef XWIN_CLIPBOARD
 /*
@@ -121,8 +115,6 @@ winInitializeGlobals (void)
 {
   g_dwCurrentThreadID = GetCurrentThreadId ();
 #ifdef XWIN_CLIPBOARD
-  g_fClipboardLaunched = FALSE;
-  g_fClipboardStarted = FALSE;
   g_iClipboardWindow = None;
   g_pClipboardDisplay = NULL;
   g_atomLastOwnedSelection = None;
