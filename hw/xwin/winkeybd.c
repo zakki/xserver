@@ -552,7 +552,13 @@ winSendKeyEventImpl (DWORD dwKey, Bool fDown, Bool fIme)
     }
 #endif
 
+#ifdef XWIN_WINIME
+  g_imeKey = fIme;
+#endif
   QueueKeyboardEvents(g_pwinKeyboard, fDown ? KeyPress : KeyRelease, dwKey + MIN_KEYCODE, NULL);
+#ifdef XWIN_WINIME
+  g_imeKey = FALSE;
+#endif
 }
 
 void

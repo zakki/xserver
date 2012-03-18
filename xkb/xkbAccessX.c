@@ -526,11 +526,10 @@ KeySym *	sym = XkbKeySymsPtr(xkbi->desc,key);
 	    if (BitIsOn(keybd->kbdfeed->ctrl.autoRepeats,key)) {
 		if (xkbDebugFlags&0x10)
 		    DebugF("Starting software autorepeat...\n");
-		if (xkbi->repeatKey == key
 #ifdef XWIN_WINIME
-//		    || event->u.keyButtonPointer.pad1 == 1
+		if (!event->key_ime) {
 #endif
-		    )
+		if (xkbi->repeatKey == key)
 		    ignoreKeyEvent = TRUE;
 		else {
 		    xkbi->repeatKey = key;
@@ -538,6 +537,9 @@ KeySym *	sym = XkbKeySymsPtr(xkbi->desc,key);
 			    0, ctrls->repeat_delay,
 			    AccessXRepeatKeyExpire, (pointer)keybd);
 		}
+#ifdef XWIN_WINIME
+		}
+#endif
 	    }
 	}
     }
