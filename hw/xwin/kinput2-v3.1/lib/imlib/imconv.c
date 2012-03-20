@@ -971,7 +971,7 @@ char **preedit_strp;
 	    *preedit_strp = (char *)arg.text;
 	}
 #endif
-	ICClearConversion(input_obj);
+	ICClearConversion(input_obj, False);
 	TRACE(("\twas converting. %d bytes left\n", num_bytes));
 
 	if (icp->common_attr.reset_state == XIMInitialState) {
