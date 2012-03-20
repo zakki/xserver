@@ -490,13 +490,14 @@ XtPointer *string;
 }
 
 int
-ICClearConversion(w)
+ICClearConversion(w, fin)
 Widget w;
+Boolean fin;
 {
     InputConvObjectClass class = (InputConvObjectClass)w->core.widget_class;
 
     XtCheckSubclass(w, inputConvObjectClass, "ICClearConversion()");
-    return (*class->inputConv_class.ClearConversion)(w);
+    return (*class->inputConv_class.ClearConversion)(w, fin);
 }
 
 ICString *
