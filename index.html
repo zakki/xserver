@@ -46,20 +46,23 @@
       <span class="small">by <a href="https://github.com/zakki">zakki</a></span></h1>
 
     <div class="description">
-      Windows IME support for X.org server
+      WindowsのIMEで日本語入力
     </div>
 
 	<h2>Install</h2>
-	<p>Cygwinのsetup.exeを-X付きで起動してUser URLに http://zakki.github.com/xserver/ を入力してください。
+	<p>Cygwinのsetup.exeを-X付きで起動してUser URLに http://zakki.github.com/xserver/ を指定してください。
 	<p>パッケージ名はxorg-server-imm32です。
 	<h2>Usage</h2>
 	<code>
 	  XWin -ime&amp;<br>
 	  XMODIFIERS="@im=kinput2imm32" emacs&amp;<br>
 	</code>
-    
 
-    
+	<ul>
+	  <li>XIM経由で日本語入力します。</li>
+	  <li>日本語ロケールのみの対応です。</li>
+	</ul>
+
       <h2>Contact</h2>
       <p>Kensuke Matsuzaki (zakki@peppermint.jp)<br/>      </p>
 	  <p>https://twitter.com/#!/k_matsuzaki</p>
