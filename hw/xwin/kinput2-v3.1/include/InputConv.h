@@ -305,7 +305,8 @@ extern int ICGetConvertedString(
  */
 extern int ICClearConversion(
 #if NeedFunctionPrototypes
-	Widget		/* object */
+    Widget		/* object */,
+    Boolean		/* fin */
 #endif
 );
 

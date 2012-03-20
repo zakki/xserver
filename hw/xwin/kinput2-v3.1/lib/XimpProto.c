@@ -2329,7 +2329,7 @@ XClientMessageEvent *ev;
 			    client->property, xpw->ximp.ctextAtom, 8,
 			    PropModeAppend, (unsigned char *)"", 0);
 	}
-	ICClearConversion(inputobj);
+	ICClearConversion(inputobj, False);
     }
 
     TRACE(("\tsending XIMP_RESET_RETURN message\n"));

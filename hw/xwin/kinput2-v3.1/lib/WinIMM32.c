@@ -108,7 +108,7 @@ static int CompareSegment();
 static ICString *GetItemList();
 static int SelectItem();
 static int ConvertedString();
-static int ClearConversion();
+static int ClearConversion(Widget w, Boolean fin);
 static ICString *GetAuxSegments();
 static int GetTriggerKeys();
 static int PreeditString();
@@ -661,12 +661,16 @@ TRACE(("    Call XWinIMEGetCompositionString...\n"));	/*YA*/
  *	返される
  */
 static int
-ClearConversion(Widget w)
+ClearConversion(Widget w, Boolean fin)
 {
-  WinIMM32Object obj = (WinIMM32Object)w;
-  BOOL fModify;
+    WinIMM32Object obj = (WinIMM32Object)w;
+    BOOL fModify;
 
 TRACE(("    WinIMM32: ClearConversion\n"));	/*YA*/
+    if (fin)
+    {
+	return 0;
+    }
 TRACE(("    Call XWinIMEClearContext...\n"));	/*YA*/
     XWinIMEClearContext(obj->winimm32.dpy, -1, &fModify);
 

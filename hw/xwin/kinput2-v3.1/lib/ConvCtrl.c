@@ -534,7 +534,7 @@ ConversionAttributes *value;
 	return;
     }
 
-    ICClearConversion(ccw->ccontrol.inputobj);
+    ICClearConversion(ccw->ccontrol.inputobj, False);
     ccw->ccontrol.notext = ICNumSegments(ccw->ccontrol.inputobj) == 0;
 
     ccw->ccontrol.active = True;
@@ -610,7 +610,7 @@ Widget w;
 		     XtNauxControl, AuxControlCallback,
 		     (XtPointer)ccw);
 
-    ICClearConversion(ccw->ccontrol.inputobj);
+    ICClearConversion(ccw->ccontrol.inputobj, False);
 
     MyRemoveEventHandler(dpy, ccw->ccontrol.clientwindow, DestroyNotify,
 			 ClientDead, (XtPointer)ccw);
@@ -1126,7 +1126,7 @@ TRACE(("ConvCtrl:%s()\n", __FUNCTION__));
     (*class->conversionControl_class.Finish)((Widget)ccw);
 
     /* clear conversion object */
-    ICClearConversion(ccw->ccontrol.inputobj);
+    ICClearConversion(ccw->ccontrol.inputobj, True);
 
     ccw->ccontrol.oldclientwindow = None;
 TRACE(("*** XtCallCallbackList ***: endcallback, True\n"));
