@@ -102,7 +102,6 @@ int	debug_all;
 typedef struct {
     char *conversionEngine;
     int debugLevel;
-    Boolean useKinputProtocol;
     Boolean useXimpProtocol;
     Boolean useXIMProtocol;
     Boolean appdefs_loaded;
@@ -115,8 +114,6 @@ static XtResource app_resources[] = {
       XtOffset(AppResP, conversionEngine), XtRString, (XtPointer)"" },
     { "debugLevel", "DebugLevel", XtRInt, sizeof(int),
       XtOffset(AppResP, debugLevel), XtRImmediate, (XtPointer)0 },
-    { "useKinputProtocol", "UseKinputProtocol", XtRBoolean, sizeof(Boolean),
-      XtOffset(AppResP, useKinputProtocol), XtRImmediate, (XtPointer)True },
     { "useXimpProtocol", "UseXimpProtocol", XtRBoolean, sizeof(Boolean),
       XtOffset(AppResP, useXimpProtocol), XtRImmediate, (XtPointer)True },
     { "useXIMProtocol", "UseXIMProtocol", XtRBoolean, sizeof(Boolean),
@@ -138,8 +135,6 @@ static XrmOptionDescRec	options[] = {
     {"-font",		"*JpWcharDisplay.font",	XrmoptionSepArg,	NULL},
     {"-kanjifont",	"*JpWcharDisplay.kanjiFont", XrmoptionSepArg,	NULL},
     {"-kanafont",	"*JpWcharDisplay.kanaFont", XrmoptionSepArg,	NULL},
-    {"-kinput",		".useKinputProtocol",	XrmoptionNoArg,		"on"},
-    {"+kinput",		".useKinputProtocol",	XrmoptionNoArg,		"off"},
     {"-ximp",		".useXimpProtocol",	XrmoptionNoArg,		"on"},
     {"+ximp",		".useXimpProtocol",	XrmoptionNoArg,		"off"},
     {"-xim",		".useXIMProtocol",	XrmoptionNoArg,		"on"},
@@ -474,7 +469,6 @@ return 1;
 
     // cheat
     debug_all = 10;	// force Trace mode	Y.Arai
-    appres.useKinputProtocol = False;
     appres.useXimpProtocol = False;
 
 #ifdef RANDOM_ID
@@ -526,23 +520,6 @@ return 1;
 				      NULL);
 
     numProtocols = 0;
-
-    if (appres.useKinputProtocol)
-    {
-	TRACE(("internalKinput2: Use Kinput.\n"));
-	protocol = XtVaCreateWidget("kinputprotocol",
-				    kinputProtocolWidgetClass,
-				    manager,
-				    XtNlanguage, "JAPANESE",
-				    XtNinputObjectClass, inputobjclass,
-				    XtNdisplayObjectClass, displayobjclass,
-				    XtNwidth, 1,
-				    XtNheight, 1,
-				    NULL);
-	XtAddCallback(protocol, XtNdestroyCallback,
-		      Destroyed, (XtPointer)NULL);
-	numProtocols++;
-    }
 
     if (appres.useXimpProtocol)
     {
@@ -970,21 +947,6 @@ char **av;
 				      NULL);
 
     numProtocols = 0;
-
-    if (appres.useKinputProtocol) {
-	protocol = XtVaCreateWidget("kinputprotocol",
-				    kinputProtocolWidgetClass,
-				    manager,
-				    XtNlanguage, "JAPANESE",
-				    XtNinputObjectClass, inputobjclass,
-				    XtNdisplayObjectClass, displayobjclass,
-				    XtNwidth, 1,
-				    XtNheight, 1,
-				    NULL);
-	XtAddCallback(protocol, XtNdestroyCallback,
-		      Destroyed, (XtPointer)NULL);
-	numProtocols++;
-    }
 
     if (appres.useXimpProtocol) {
 	protocol = XtVaCreateWidget("ximpprotocol",

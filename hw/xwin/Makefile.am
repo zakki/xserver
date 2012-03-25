@@ -108,7 +108,6 @@ SRCS_WINIME = \
 	kinput2-v3.1/lib/KIMProto.c \
 	kinput2-v3.1/lib/InputConv.c \
 	kinput2-v3.1/lib/ioecall.c \
-	kinput2-v3.1/lib/KIProto.c \
 	kinput2-v3.1/lib/OffConv.c \
 	kinput2-v3.1/lib/OnConv.c \
 	kinput2-v3.1/lib/OverConv.c \
