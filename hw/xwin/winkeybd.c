@@ -45,7 +45,7 @@
 #define _WINIME_SERVER_
 #include <X11/extensions/winimestr.h>
 
-static Bool g_winKeyState[NUM_KEYCODES];
+Bool g_winKeyState[NUM_KEYCODES];
 
 #ifdef XWIN_WINIME
 static DWORD last_dwKeyCode = 0;	// dwKey + MIN_KEYCODE
@@ -503,19 +503,23 @@ winSendKeyEventImpl (DWORD dwKey, Bool fDown, Bool fIme)
   /* Update the keyState map */
   g_winKeyState[dwKey] = fDown;
 
-  GetEventList(&events);
-  nevents = GetKeyboardEvents(events, g_pwinKeyboard, fDown ? KeyPress : KeyRelease, dwKey + MIN_KEYCODE);
-
 #ifdef XWIN_WINIME
+  ErrorF("Win Key Event(type = %d, keycode = %d ifIme = %d).\n", fDown, (int)(dwKey + MIN_KEYCODE), fIme);
   if (fIme)
     {
-      winWinIMESendAll (WinIMEControllerNotify,
-			WinIMENotifyMask,
-			WinIMEIgnoreNextKey,
-			TRUE,
-			NULL);
+      GetEventList(&events);
+      nevents = GetKeyboardEvents(events, g_pwinKeyboard, KeyPress, KEY_UNKNOWN);
+      for (i = 0; i < nevents; i++)
+        mieqEnqueue(g_pwinKeyboard, (InternalEvent*)events[i].event);
+      nevents = GetKeyboardEvents(events, g_pwinKeyboard, KeyRelease, KEY_UNKNOWN);
+      for (i = 0; i < nevents; i++)
+        mieqEnqueue(g_pwinKeyboard, (InternalEvent*)events[i].event);
+      return;
     }
 #endif
+
+  GetEventList(&events);
+  nevents = GetKeyboardEvents(events, g_pwinKeyboard, fDown ? KeyPress : KeyRelease, dwKey + MIN_KEYCODE);
 
 #ifdef XWIN_WINIME
   g_imeKey = fIme;
