@@ -46,7 +46,7 @@
 #define _WINIME_SERVER_
 #include <X11/extensions/winimestr.h>
 
-static Bool g_winKeyState[NUM_KEYCODES];
+Bool g_winKeyState[NUM_KEYCODES];
 
 #ifdef XWIN_WINIME
 static DWORD last_dwKeyCode = 0;	// dwKey + MIN_KEYCODE
@@ -542,13 +542,12 @@ winSendKeyEventImpl (DWORD dwKey, Bool fDown, Bool fIme)
   g_winKeyState[dwKey] = fDown;
 
 #ifdef XWIN_WINIME
+  ErrorF("Win Key Event(type = %d, keycode = %d ifIme = %d).\n", fDown, (int)(dwKey + MIN_KEYCODE), fIme);
   if (fIme)
     {
-      winWinIMESendAll (WinIMEControllerNotify,
-			WinIMENotifyMask,
-			WinIMEIgnoreNextKey,
-			TRUE,
-			NULL);
+      QueueKeyboardEvents(g_pwinKeyboard, KeyPress, KEY_UNKNOWN, NULL);
+      QueueKeyboardEvents(g_pwinKeyboard, KeyRelease, KEY_UNKNOWN, NULL);
+      return;
     }
 #endif
 

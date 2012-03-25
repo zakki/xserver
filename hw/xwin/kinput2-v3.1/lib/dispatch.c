@@ -714,7 +714,7 @@ winXIMEXEventHandler (Display * pDisplay, XEvent * event, int ime_event_base, in
 	    case WinIMEIgnoreNextKey:
 	    {
 		TRACE (("WinIMEIgnoreNextKey %d %d\n", ime_event->context, ime_event->arg));
-		g_ignore_key = TRUE;
+		g_ignore_key = ime_event->arg;
 	    }
 		break;
 
