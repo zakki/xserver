@@ -104,8 +104,8 @@ extern char dispatchException;
  *****************************************************************************/
 
 static int close_display (Display *dpy, XExtCodes *extCodes);
-static Bool wire_to_event ();
-static Status event_to_wire ();
+static Bool wire_to_event (Display *dpy, XEvent  *re, xEvent  *event);
+static Status event_to_wire (Display *dpy, XEvent  *re, xEvent  *event);
 
 static /* const */ XExtensionHooks winime_extension_hooks = {
   NULL,				/* create_gc */
@@ -209,10 +209,7 @@ event_to_wire (Display *dpy, XEvent  *re, xEvent  *event)
  *		EUC 文字列には、0x8f の特別なコードが含まれているので
  *		wchar に変換する時に個別処理をする。
  */
-static int euc2wcs(euc, elen, wbuf)
-unsigned char	*euc;
-int		elen;
-wchar		*wbuf;
+static int euc2wcs(unsigned char *euc, int elen, wchar *wbuf)
 {
 	int	lb = 0, hb = 0 ;
 	int	i ;
@@ -253,37 +250,6 @@ wchar		*wbuf;
 	*wbuf = 0 ;
 	return n ;
 }
-
-#if 0
-static int
-_Local_mbstowcs(
-    XLCd lcd,
-    XlcConv conv,
-    char *str,
-    int slen,
-    wchar *wstr,
-    int len)
-{
-    XPointer from, to;
-    int from_left, to_left, ret;
-
-    from = (XPointer) str;
-    from_left = slen;
-    to = (XPointer) wstr;
-    to_left = len;
-
-    if (_XlcConvert(conv, &from, &from_left, &to, &to_left, NULL, 0) < 0)
-	ret = -1;
-    else
-    {
-	ret = len - to_left;
-	if (wstr && to_left > 0)
-	    wstr[ret] = (wchar) 0;
-    }
-
-    return ret;
-}
-#endif
 
 static int
 _Local_wcstombs(
