@@ -114,19 +114,19 @@ extern HANDLE			g_ThreadHandle;
 DWORD WINAPI
 ki2ServerProc(LPVOID lpParameter)
 {
-ErrorF("ki2ServerProc() start.\n");
-    initKinput2(display);
-ErrorF("ki2ServerProc() exit.\n");
-    ExitThread(0);
+  winDebug("ki2ServerProc() start.\n");
+  initKinput2(display);
+  winDebug("ki2ServerProc() exit.\n");
+  ExitThread(0);
 }
 #else
 static void
 ki2ServerProc (void *pvNotUsed)
 {
-ErrorF("ki2ServerProc() start.\n");
-    initKinput2(display);
-ErrorF("ki2ServerProc() exit.\n");
-    pthread_exit (NULL);
+  winDebug("ki2ServerProc() start.\n");
+  initKinput2(display);
+  winDebug("ki2ServerProc() exit.\n");
+  pthread_exit (NULL);
 }
 #endif
 
@@ -178,7 +178,7 @@ winimeProcQueryTree (ClientPtr client)
 {
     int			iReturn;
 
-ErrorF("%s - Hello.\n", __FUNCTION__);
+    winDebug("%s - Hello.\n", __FUNCTION__);
     /*
      * This procedure is only used for initialization.
      * We can unwrap the original procedure at this point
@@ -252,7 +252,7 @@ ErrorF("%s - Hello.\n", __FUNCTION__);
 	    return iReturn;
 	}
 
-	ErrorF ("winimeProcQueryTree - winInitImServer returned.\n");
+	winDebug("winimeProcQueryTree - winInitImServer returned.\n");
     }
   
     /* Flag that clipboard client has been launched */
@@ -274,7 +274,7 @@ winimeProcEstablishConnection (ClientPtr client)
     static int			s_iCallCount = 0;
     static unsigned long	s_ulServerGeneration = 0;
 
-    ErrorF ("winimeProcEstablishConnection - Hello\n");
+    winDebug("winimeProcEstablishConnection - Hello\n");
 
     /* Do nothing if clipboard is not enabled */
     if (!g_fIME)
@@ -372,7 +372,7 @@ winimeProcEstablishConnection (ClientPtr client)
 	    return iReturn;
 	}
 
-	ErrorF ("winimeProcEstablishConnection - winInitImServer returned.\n");
+	winDebug("winimeProcEstablishConnection - winInitImServer returned.\n");
     }
 
     /* Flag that clipboard client has been launched */
@@ -395,7 +395,7 @@ SendImeKey (void)
     BOOL	ctrlPress = FALSE;
     int i;
 
-    ErrorF("%s()\n", __FUNCTION__);
+    winDebug("%s()\n", __FUNCTION__);
 
     ZeroMemory (&xCurrentEvent, sizeof (xCurrentEvent));
 

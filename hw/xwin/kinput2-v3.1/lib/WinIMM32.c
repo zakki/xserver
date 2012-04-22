@@ -288,9 +288,9 @@ InputEvent(Widget w, XEvent *event)
     Bool fmodify;
 //    int i;
 
-TRACE(("    WinIMM32: InputEvent\n"));	/*YA*/
+    TRACE(("    WinIMM32: InputEvent\n"));	/*YA*/
     /* KeyPress以外は捨てる */
-ErrorF("Key Event(type = %d, time = %ld, keycode = %d ignore = %d).\n", event->type, ev->time, ev->keycode, g_ignore_key);
+    TRACE(("Key Event(type = %d, time = %ld, keycode = %d ignore = %d).\n", event->type, ev->time, ev->keycode, g_ignore_key));
     if (event->type != KeyPress /*&& event->type != KeyRelease*/)
     {
 	TRACE(("      Not KeyPress Event(type = %d, time = %ld, keycode = %d).\n", event->type, ev->time, ev->keycode));
