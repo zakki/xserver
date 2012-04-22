@@ -100,7 +100,7 @@ Kinput2imm32.height: 1
 *IMProtocol.locales: ja_JP.SJIS, ja_JP.EUC, ja_JP.UTF-8, ja_JP, japanese, japan, ja, en_US.UTF-8
 ! common to XimpProtocol and IMProtocol
 *defaultFontList: -misc-fixed-medium-r-normal--14-*-*-*-c-*
-*ConversionStartKeys: Shift Ctrl<Key>space
+*ConversionStartKeys: Shift Ctrl<Key>F12
 !!
 !! sending back unused keypress events
 !!
