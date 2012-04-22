@@ -146,7 +146,8 @@ int XWinIMEGetCompositionString (Display *dpy, int context,
 				  int count,
 				  wchar* str_return);
 Bool XWinIMESetCompositionDraw (Display *dpy, int context, Bool draw);
-Bool XWinIMEGetCursorPosition (Display* dpy, int context, int *cursor, int *numClause, int *curClause, int *offset);	// Change Y.AraiBool XWinIMEGetConversionStatus (Display *dpy, int context, Bool* fopen, DWORD* conversion, DWORD* sentence, Bool* fmodify);
+Bool XWinIMEGetCursorPosition (Display* dpy, int context, int *cursor, int *numClause, int *curClause, int *offset);	// Change Y.Arai
+Bool XWinIMEGetConversionStatus (Display *dpy, int context, Bool* fopen, DWORD* conversion, DWORD* sentence, Bool* fmodify);
 Bool XWinIMEGetOpenStatus (Display *dpy, int context, Bool* fopen);
 int XWinIMEGetTargetClause (Display *dpy, int context, int target, wchar *data, int *attr);
 int XWinIMEGetTargetString (Display *dpy, int context, int target, int offset, wchar *data);
