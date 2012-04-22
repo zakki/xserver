@@ -186,23 +186,11 @@ GetTargetClause(WIContextPtr pWIC, int target, int *attr, int *nNumChar)
 #endif	// #if 1	// issue-19対策
     }
 
-    pszClause = (wchar_t*)calloc(2, (pWIC->pClauseList[target + 1] - pWIC->pClauseList[target] + 1));	// NULLワイド文字分を足す
-winDebug("  Size = %ld, target = %ld, target+1 = %ld\n", (pWIC->pClauseList[target + 1] - pWIC->pClauseList[target] + 1) * 2, pWIC->pClauseList[target], pWIC->pClauseList[target + 1]);
-#if 0	// なぜか失敗する
-    wcsncpy(pszClause,
-		&((pWIC->pszComposition)[(pWIC->pClauseList)[target] / 2]),
-		((pWIC->pClauseList)[target + 1] - (pWIC->pClauseList)[target]) / 2);
-#else
-{
     *nNumChar = (pWIC->pClauseList[target + 1] - pWIC->pClauseList[target]);
+    pszClause = (wchar_t*)calloc(2, (*nNumChar) + 1);	// NULLワイド文字分を足す
+winDebug("  Size = %ld, target = %ld, target+1 = %ld\n", (pWIC->pClauseList[target + 1] - pWIC->pClauseList[target] + 1) * 2, pWIC->pClauseList[target], pWIC->pClauseList[target + 1]);
     wchar_t* pSrc = &((pWIC->pszComposition)[(pWIC->pClauseList)[target]]);
-    int i;
-    for (i=0; i<*nNumChar; i++)
-    {
-	pszClause[i] = pSrc[i];
-    }
-}
-#endif
+    memcpy(pszClause, pSrc, (*nNumChar) * 2);
 
     if (pWIC->pszClause != NULL)
 	Xfree (pWIC->pszClause);
@@ -276,22 +264,11 @@ winDebug("      Last segment.\n");	/*YA*/
 	return pszClause;
     }
 
-    pszClause = (wchar_t*)calloc(2, pWIC->pClauseList[pWIC->nNumClause] - pWIC->pClauseList[target] - offset + 1);	// NULLワイド文字分を足す
-#if 0	// なぜか失敗する
-    wcsncpy(pszClause,
-		&((pWIC->pszComposition)[((pWIC->pClauseList)[target] / 2) + offset]),
-		((pWIC->pClauseList)[pWIC->nNumClause] - (pWIC->pClauseList)[target]) / 2);
-#else
-{
     int nSize = pWIC->pClauseList[pWIC->nNumClause] - pWIC->pClauseList[target] - offset;
+    pszClause = (wchar_t*)calloc(2, nSize + 1);	// NULLワイド文字分を足す
     wchar_t* pSrc = &((pWIC->pszComposition)[(pWIC->pClauseList)[target] + offset]);
-    int i;
-    for (i=0; i<nSize; i++)
-    {
-	pszClause[i] = pSrc[i];
-    }
-}
-#endif
+    memcpy(pszClause, pSrc, nSize * 2);
+
     if (pWIC->pszClause != NULL)
 	Xfree (pWIC->pszClause);
     pWIC->pszClause = pszClause;
