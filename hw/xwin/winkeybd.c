@@ -504,7 +504,7 @@ winSendKeyEventImpl (DWORD dwKey, Bool fDown, Bool fIme)
   g_winKeyState[dwKey] = fDown;
 
 #ifdef XWIN_WINIME
-  ErrorF("Win Key Event(type = %d, keycode = %d ifIme = %d).\n", fDown, (int)(dwKey + MIN_KEYCODE), fIme);
+  winDebug("Win Key Event(type = %d, keycode = %d ifIme = %d).\n", fDown, (int)(dwKey + MIN_KEYCODE), fIme);
   if (fIme)
     {
       GetEventList(&events);
