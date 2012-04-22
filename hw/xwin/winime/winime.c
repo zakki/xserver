@@ -609,7 +609,7 @@ XWinIMEGetCompositionString (Display *dpy, int context,
       return -1;
     }
 
-  if ((str = (char *) Xmalloc(rep.strLength+1)))
+  if ((str = (char *) Xmalloc(rep.strLength)))
     {
       _XReadPad(dpy, (XPointer)str, (long)rep.strLength);
     }
@@ -878,11 +878,10 @@ TRACE("  *D*");
     }
 TRACE("  *E*");
 
-    if ((str = (char *) Xmalloc(rep.bytes + 1)))
+    if ((str = (char *) Xmalloc(rep.bytes)))
     {
 MyErrorF("  %d bytes.\n", rep.bytes);
 	_XReadPad(dpy, (XPointer)str, (long)rep.bytes);
-	str[rep.bytes + 1] = 0;
     } else
     {
 TRACE("  Xmalloc error.\n");
@@ -998,10 +997,9 @@ XWinIMEGetTargetString (Display *dpy,
 	return -1;
     }
 
-    if ((str = (char *) Xmalloc(rep.bytes + 1)))
+    if ((str = (char *) Xmalloc(rep.bytes)))
     {
 	_XReadPad(dpy, (XPointer)str, (long)rep.bytes);
-	str[rep.bytes + 1] = 0;
     } else
     {
 	_XEatData(dpy, (unsigned long)rep.bytes);
