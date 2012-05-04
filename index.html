@@ -20,7 +20,7 @@
     h1 .small { font-size: 0.4em; }
     h1 a { text-decoration: none }
     h2 { font-size: 1.5em; color: #29a47b; }
-    h3 { text-align: center; color: #29a47b; }
+    h3 { color: #29a47b; }
     a { color: #29a47b; }
     .description { font-size: 1.2em; margin-bottom: 30px; margin-top: 30px; font-style: italic;}
     .download { float: right; }
@@ -51,7 +51,7 @@
 
 	<h2>Install</h2>
 	<p>Cygwinのsetup.exeを-X付きで起動してUser URLに http://zakki.github.com/xserver/ を指定してください。
-	<p>パッケージ名はxorg-server-imm32です。
+	<p>パッケージ名は xorg-server-imm32 です。
 	<h2>Usage</h2>
 	<code>
 	  XWin -ime&amp;<br>
@@ -63,9 +63,26 @@
 	  <li>日本語ロケールのみの対応です。</li>
 	</ul>
 
-      <h2>Contact</h2>
-      <p>Kensuke Matsuzaki (zakki@peppermint.jp)<br/>      </p>
-	  <p>https://twitter.com/#!/k_matsuzaki</p>
+	<h2>ChangeLog</h2>
+	<p>
+	  <h3>Version 1.11.4-5b</h3>
+	  <b>2012/05/04</b>
+
+	  <ul>
+		<li>IMEがOnでもXクライアントにアルファベットが入力される場合があった</li>
+	  </ul>
+	  <h3>Version 1.11.4-5a</h3>
+	  <b>2012/03/21</b>
+
+	  <ul>
+		<li>ベースをxorg-server-1.11.4-5に変更</li>
+		<li>Xクライアントを強制終了した際にエラーが発生していた</li>
+	  </ul>
+	</p>
+
+    <h2>Contact</h2>
+    <p>Kensuke Matsuzaki (zakki@peppermint.jp)<br/>      </p>
+	<p>https://twitter.com/#!/k_matsuzaki</p>
     
 
     <h2>Download</h2>
