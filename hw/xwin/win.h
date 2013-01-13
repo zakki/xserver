@@ -1411,9 +1411,6 @@ winWinIMEExtensionInit (void);
 void
 winWinIMESendEvent (int type, unsigned int mask, int kind, int arg, int context, HWND hwnd);
 
-int
-winHIMCtoContext (DWORD hIMC);
-
 void
 winCommitCompositionResult (int nContext, int nIndex, void *pData, int nLen);
 

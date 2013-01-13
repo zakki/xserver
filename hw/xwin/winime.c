@@ -53,9 +53,7 @@
 
 #define CYGIME_DEBUG TRUE
 
-extern Bool g_fIME;
 extern HWND g_hwndKeyboardFocus;
-extern int g_iNumScreens;
 extern HWND g_hwndLastKeyPress;
 
 extern DWORD	g_TriggerKeycode;
@@ -141,7 +139,6 @@ typedef struct {
 //extern WindowPtr *WindowTable;
 
 extern pthread_t			g_ptImServerProc;
-extern volatile char dispatchException;
 
 /*
  * Local helper functions
@@ -470,8 +467,8 @@ GetLastContext(void)
 }
 // << Add Y.Arai
 
-int
-winHIMCtoContext(DWORD hIMC)
+static int
+winHIMCtoContext(HIMC hIMC)
 {
     WIContextPtr pWIC;
 
@@ -786,7 +783,7 @@ ProcWinIMESelectInput (register ClientPtr client)
         }
 
         /* build the entry */
-        pNewEvent = (WinIMEEventPtr) xalloc (sizeof (WinIMEEventRec));
+        pNewEvent = (WinIMEEventPtr) malloc (sizeof (WinIMEEventRec));
         if (!pNewEvent)
             return BadAlloc;
         pNewEvent->next = 0;
@@ -809,7 +806,7 @@ ProcWinIMESelectInput (register ClientPtr client)
          * done through the resource database.
          */
         if (!pHead) {
-            pHead = (WinIMEEventPtr *) xalloc (sizeof (WinIMEEventRec));
+            pHead = (WinIMEEventPtr *) malloc (sizeof (WinIMEEventRec));
             if (!pHead ||
                 !AddResource (eventResource, EventType, (pointer)pHead)) {
                 FreeResource (clientResource, RT_NONE);
