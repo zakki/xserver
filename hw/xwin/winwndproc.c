@@ -1357,15 +1357,15 @@ winWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_IME_STARTCOMPOSITION:
     case WM_IME_ENDCOMPOSITION:
     case WM_IME_COMPOSITION:
-    case WM_IME_SETCONTEXT:		//
+    case WM_IME_SETCONTEXT:
     case WM_IME_NOTIFY:
-    case WM_IME_CONTROL:		//
-    case WM_IME_COMPOSITIONFULL:	//
-    case WM_IME_SELECT:			//
+    case WM_IME_CONTROL:
+    case WM_IME_COMPOSITIONFULL:
+    case WM_IME_SELECT:
     case WM_IME_CHAR:
-    case WM_IME_REQUEST:		//
-    case WM_IME_KEYDOWN:		//
-    case WM_IME_KEYUP:			//
+    case WM_IME_REQUEST:
+    case WM_IME_KEYDOWN:
+    case WM_IME_KEYUP:
 
     case WM_CHAR:
       return winIMEMessageHandler (hwnd, message, wParam, lParam);

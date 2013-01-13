@@ -1039,7 +1039,6 @@ ProcWinIMEGetConversionStatus (register ClientPtr client)
     DWORD fdwSentence = 0;
     DWORD fChange = 0;
     xWinIMEGetConversionStatusReply rep;
-//    char statsString[10];
 
 #if CYGIME_DEBUG
     winDebug ("%s %d\n", __FUNCTION__, stuff->context);
@@ -1063,9 +1062,9 @@ ProcWinIMEGetConversionStatus (register ClientPtr client)
                 fdwSentence = 0;
             }
         }
-// >> check mode changed
-#if 1
-        if (pWIC->nLastAttr == 0) {   // 前回は何もない状態
+		// check mode changed
+        if (pWIC->nLastAttr == 0) {
+            // no last attribute
             if (pWIC->nAttr == 0) {
                 fChange = 0;
             } else {
@@ -1074,13 +1073,16 @@ ProcWinIMEGetConversionStatus (register ClientPtr client)
                 else
                     fChange = 1;
             }
-        } else { // 前回との比較。最初だけでチェックすればＯＫなはず
-            if (pWIC->nAttr == 0) { // 現在の変換文字列がない
+        } else {
+            // compare with last attribute.
+            if (pWIC->nAttr == 0) {
+                // no current attribute
                 if (pWIC->pLastAttr[0] == ATTR_INPUT)
                     fChange = 0;
                 else
                     fChange = 1;
-            } else {   // どっちもある
+            } else {
+                // compare head
                 int nCur = ATTR_INPUT, nLast = ATTR_INPUT;
                 if (pWIC->pAttr[0] != ATTR_INPUT)
                     nCur = ATTR_CONVERTED;
@@ -1092,22 +1094,6 @@ ProcWinIMEGetConversionStatus (register ClientPtr client)
                     fChange = 1;
             }
         }
-#else
-        if (pWIC->nAttr != pWIC->nLastAttr) {
-            winDebug("nAttr(%d) != nLastAttr(%d)\n", pWIC->nAttr, pWIC->nLastAttr);
-            fChange = 1;
-        } else {
-            int i;
-            for (i=0; i<pWIC->nAttr; i++) {
-                if (pWIC->pAttr[i] != pWIC->pLastAttr[i]) {
-                    winDebug("pAttr[i](%d) != pLastAttr[i](%d)\n", i, pWIC->pAttr[i], i, pWIC->pLastAttr[i]);
-                    fChange = 1;
-                    break;
-                }
-            }
-        }
-#endif
-// << check mode changed
     } else {
 #if CYGIME_DEBUG
         winDebug ("context is not found.\n");
@@ -1268,7 +1254,6 @@ ProcWinIMEGetTargetString (register ClientPtr client)
 #if CYGIME_DEBUG
             winDebug ("no composition result. 1\n");
 #endif
-            //return BadValue;
             len = 0;
             rep.type = X_Reply;
             rep.length = (len + 3) >> 2;
@@ -1422,12 +1407,10 @@ ProcWinIMESetCandidateWindow (register ClientPtr client)
     pWIC->nCandPosX = pt.x;
     pWIC->nCandPosY = pt.y;
     pWIC->nCandPage = stuff->n;
-#if 1
+
+    // Both ImmSetCandidateWindow and IMC_SETCANDIDATEPOS needed
     n = ImmSetCandidateWindow(pWIC->hIMC, &form);
-#endif
-#if 1   // 両方やらないといけない
     result = SendMessage(pWIC->hWnd, WM_IME_CONTROL, IMC_SETCANDIDATEPOS, (LPARAM)&form);
-#endif
 
     return (client->noClientException);
 }
@@ -1504,11 +1487,10 @@ ProcWinIMESetFocus (register ClientPtr client)
         winDebug("  turn on(Context = %d, hIMC = %lX, hWnd = %lX)\n", pWIC->nContext, pWIC->hIMC, pWIC->hWnd);
 
 /*
-      if (hOldIMC == pWIC->hIMC)
-      {
-    winDebug("  already set %lX\n", pWIC->hIMC);
-    return (client->noClientException);
-      }
+        if (hOldIMC == pWIC->hIMC) {
+            winDebug("  already set %lX\n", pWIC->hIMC);
+            return (client->noClientException);
+        }
 */
 
         setFocus(pWIC);
@@ -1516,20 +1498,13 @@ ProcWinIMESetFocus (register ClientPtr client)
     } else {
         winDebug("  turn off(Context = %d, hIMC = %lX, hWnd = %lX)\n", pWIC->nContext, pWIC->hIMC, pWIC->hWnd);
         if (pWIC->hWnd) {
-//    hOldIMC = ImmAssociateContext (pWIC->hWnd, (HIMC)0);
-#if 1
             if (hOldIMC != NULL) { // 前に別のが設定されていたので戻す
                 winDebug("  prev hIMC is not NULL(%lX).\n", hOldIMC);
-#if 1   // from A.Yamanaka
                 if(hOldIMC!=pWIC->hIMC)
                     ImmAssociateContext (pWIC->hWnd, hOldIMC);
                 else
                     ImmAssociateContext (pWIC->hWnd, 0);
-#else
-                ImmAssociateContext (pWIC->hWnd, hOldIMC);
-#endif
             }
-#endif
             pWIC->hWnd = NULL;
         }
     }
@@ -1678,15 +1653,6 @@ ProcWinIMEDispatch (register ClientPtr client)
         return ProcWinIMEClearContext (client);
     case X_WinIMEDestroyContext:
         return ProcWinIMEDestroyContext (client);
-/*
-  case X_WinIME:
-  return ProcWinIME (client);
-  case X_WinIME:
-  return ProcWinIME (client);
-  case X_WinIME:
-  return ProcWinIME (client);
-*/
-// << Add Y.Arai
     default:
         return BadRequest;
     }
@@ -1749,8 +1715,6 @@ winIMEMessageHandler (HWND hwnd, UINT message,
 {
     long BufLen = 0;        // Y.Arai
     LPDWORD dwCompCls = NULL;   // Y.Arai
-//    int nClause = 0;      // Y.Arai
-//    int nOffset = 0;      // Y.Arai
     int nCursor = 0;        // Y.Arai
     WIClauseRec ClauseInf;
     WIContextPtr pWIC;
@@ -1771,7 +1735,6 @@ winIMEMessageHandler (HWND hwnd, UINT message,
         winDebug ("winIMEMessageHandler - WM_IME_NOTIFY(wParam = %d)\n", wParam);
         {
             HIMC hIMC = ImmGetContext(hwnd);
-#if 1
             if (wParam == IMN_SETOPENSTATUS) {
                 BOOL fStatus = ImmGetOpenStatus(hIMC);
                 BOOL fActive = FALSE;
@@ -1779,11 +1742,7 @@ winIMEMessageHandler (HWND hwnd, UINT message,
                 if (pWIC != NULL) {
                     fActive = (pWIC->fActiveStat == 1)?TRUE:FALSE;
                     winDebug ("  Send WinIMEOpenStatus Message... hIMC = %lX, stat = %s, active = %s\n", hIMC, fStatus?"TRUE":"FALSE",fActive?"TRUE":"FALSE");
-//        ImmReleaseContext(hwnd, hIMC);
-/*
-  if (fStatus != fActive)
-  break;
-*/
+
                     if (fStatus == pWIC->fPreeditStart) {
                         ImmReleaseContext(hwnd, hIMC);
                         break;
@@ -1808,12 +1767,9 @@ winIMEMessageHandler (HWND hwnd, UINT message,
                 } else {
                     winDebug ("### context not found. hIMC = %lX\n", hIMC);
                 }
-            } else
-#endif
+            } else {
                 if (wParam == IMN_OPENCANDIDATE) {
-#if 1
                     winDebug ("  Send WinIMEOpenCand Message (Open)...\n");
-//      HIMC hIMC = ImmGetContext(hwnd);
                     int nIndex = 0;
                     if (lParam && 0x01)
                         nIndex = 0;
@@ -1832,18 +1788,16 @@ winIMEMessageHandler (HWND hwnd, UINT message,
 //      return 0;
                     break;
 // << for Miscrosoft IME Standard 2003
-#endif
                 } else if (wParam == IMN_CLOSECANDIDATE) {
                     winDebug ("  Send WinIMEOpenCand Message (Close)...\n");
-//      HIMC hIMC = ImmGetContext(hwnd);
                     winWinIMESendEvent (WinIMEControllerNotify,
                                         WinIMENotifyMask,
                                         WinIMEOpenCand,
                                         -1,
                                         winHIMCtoContext(hIMC),
                                         hwnd);
-//      ImmReleaseContext(hwnd, hIMC);
                 }
+            }
             ImmReleaseContext(hwnd, hIMC);
         }
         break;
@@ -1941,9 +1895,6 @@ winIMEMessageHandler (HWND hwnd, UINT message,
 #if 1   // 今までGCS_CURSORPOSを対象文節の区切りとして使用していたが、MS-IME系は必ず全体の最後になることが
             // わかったので、その対応
             if (lParam & GCS_COMPATTR) {
-//      int         nAttrLen = 0;
-//      char        *pAttr = NULL;
-
                 winDebug ("    GCS_COMPATTR\n");
                 /* Get result */
                 nAttrLen = ImmGetCompositionStringW(hIMC, GCS_COMPATTR, NULL, 0);
