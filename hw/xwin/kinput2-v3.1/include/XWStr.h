@@ -29,12 +29,12 @@
 
 typedef struct {
 	GC		gc;
-	XFontStruct	*font;
+	XFontSet	font;
 	int		flag;
 } FontEnt;
 
 typedef struct {
-	FontEnt	fe[4];
+	FontEnt	fe;
 } XWSGCSet;
 
 typedef XWSGCSet	*XWSGC;
@@ -49,14 +49,11 @@ typedef XWSGCSet	*XWSGC;
 
 #if __STDC__ == 1
 /* function prototype */
-extern XWSGC XWSSetGCSet(Display *, GC, GC, GC, GC);
+extern XWSGC XWSSetGCSet(Display *, GC);
 #ifdef _XtIntrinsic_h
-extern XWSGC XtWSGetGCSet(Widget, unsigned long, XGCValues *,
-			  XFontStruct *, XFontStruct *,
-			  XFontStruct *, XFontStruct *);
+extern XWSGC XtWSGetGCSet(Widget, unsigned long, XGCValues *, XFontSet);
 extern void XtWSReleaseGCSet(Widget, XWSGC);
 #endif
-extern void XWSSetMapping(XWSGC, int, int, int, int);
 extern void XtWSDestroyGCSet(XWSGC);
 extern int XWSDrawString(Display *, Drawable, XWSGC, int, int, wchar *, int);
 extern int XWSDrawImageString(Display *, Drawable, XWSGC,
@@ -69,7 +66,6 @@ extern XWSGC XWSSetGCSet();
 extern XWSGC XtWSGetGCSet();
 extern void XtWSDestroyGCSet();
 extern void XtWSReleaseGCSet();
-extern void XWSSetMapping();
 extern int XWSDrawString();
 extern int XWSDrawImageString();
 extern void XWSFontHeight();

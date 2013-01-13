@@ -102,11 +102,11 @@ typedef struct {
     Pixel	foreground, background;
     Pixmap	background_pixmap;
     Dimension	linespacing;
-    XFontStruct	**fonts;	/* an array of pointers to (XFontStruct),
-				 * NOT a pointer to an array of (XFontStruct)
-				 */
+    XFontSet	*fonts;	/* an array of pointers to (XFontSet),
+                         * NOT a pointer to an array of (XFontSet)
+                         */
     Cardinal	num_fonts;
-    XFontStruct	**status_fonts;	/* ditto */
+    XFontSet	*status_fonts;	/* ditto */
     Cardinal	num_status_fonts;
     Cursor	cursor;
 } ConversionAttributes;

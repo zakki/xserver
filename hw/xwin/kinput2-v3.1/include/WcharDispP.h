@@ -24,48 +24,17 @@
 #include "XWStr.h"
 
 
-#define XtRFontMapping "FontMapping"
-
-typedef struct {
-    String charset;	/* <registry>-<encoding> ex) "JIX0208.1983-0" */
-    int flag;
-#define G0LCharSet	(1<<0)		/* font for G0 chars. use GL */
-#define G0RCharSet	(1<<1)		/* font for G0 chars. use GR */
-#define G1LCharSet	(1<<2)
-#define G1RCharSet	(1<<3)
-#define G2LCharSet	(1<<4)
-#define G2RCharSet	(1<<5)
-#define G3LCharSet	(1<<6)
-#define G3RCharSet	(1<<7)
-} WDCharSet;
-
-typedef struct {
-    WDCharSet *charset_specs;
-    Cardinal num_specs;
-} WcharDisplayClassPart;
-
 typedef struct _WcharDisplayClassRec {
     ObjectClassPart object_class;
     ConvDisplayClassPart convDisplay_class;
-    WcharDisplayClassPart wcharDisplay_class;
 } WcharDisplayClassRec;
 
 typedef struct {
-    Boolean grmapping[4];
-} FontMapping;
-
-typedef struct {
     /* resources */
-    XFontStruct *defaultfonts[4];	/* default fonts */
-    FontMapping defaultmapping;		/* use GR or not */
+    XFontSet defaultfont;	/* default fonts */
     /* private state */
-    WDCharSet *charset_specs;		/* same as the one in class structure.
-					 * just for convenience
-					 */
-    FontSpec *fontspecs;
     Cardinal num_specs;
-    XFontStruct *fonts[4];		/* fonts now in use */
-    Boolean grmapping[4];
+    XFontSet font;		/* fonts now in use */
     Pixmap stipple;			/* Stipple Bitmap */
     XWSGC gcset_normal;
     XWSGC gcset_rev;
@@ -91,8 +60,6 @@ typedef struct {
 typedef struct _JpWcharDisplayClassRec {
     ObjectClassPart object_class;
     ConvDisplayClassPart convDisplay_class;
-    WcharDisplayClassPart wcharDisplay_class;
-    JpWcharDisplayClassPart jpWcharDisplay_class;
 } JpWcharDisplayClassRec;
 
 typedef struct {

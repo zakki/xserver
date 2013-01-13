@@ -89,12 +89,12 @@ static char	*rcsid = "$Id: xwstr.c,v 2.9 1999/01/07 03:13:03 ishisone Exp $";
 extern char *malloc();
 #endif
 
-#define G0MASK	0x0000
-#define G1MASK	0x8080
-#define G2MASK	0x0080
-#define G3MASK	0x8000
+/* #define G0MASK	0x0000 */
+/* #define G1MASK	0x8080 */
+/* #define G2MASK	0x0080 */
+/* #define G3MASK	0x8000 */
 
-#define IS2B(f)	(((f)->max_byte1 > 0) || ((f)->max_char_or_byte2 > 255))
+/* #define IS2B(f)	(((f)->max_byte1 > 0) || ((f)->max_char_or_byte2 > 255)) */
 #define MIN(a, b)	((a) > (b) ? (b) : (a))
 #define MAX(a, b)	((a) > (b) ? (a) : (b))
 
@@ -107,7 +107,7 @@ extern char *malloc();
 #ifdef __STDC__
 /* static function prototype */
 static int flushstr(Display *, Drawable,  FontEnt *, int, int,
-		    XChar2b *, XChar2b *, int);
+		    wchar *, wchar *, int);
 static int wsdrawstring(Display *, Drawable, XWSGC, int, int,
 			wchar *, int, int);
 #else
@@ -116,12 +116,7 @@ static int wsdrawstring();
 #endif
 
 XWSGC
-XWSSetGCSet(dpy, gc0, gc1, gc2, gc3)
-Display *dpy;
-GC gc0;
-GC gc1;
-GC gc2;
-GC gc3;
+XWSSetGCSet(Display *dpy, GC gc0)
 {
 	XWSGC	gcset;
 	int	i;
@@ -130,46 +125,19 @@ GC gc3;
 	if (gcset == NULL)
 		return (XWSGC)NULL;
 
-	gcset->fe[0].gc = gc0;
-	gcset->fe[1].gc = gc1;
-	gcset->fe[2].gc = gc2;
-	gcset->fe[3].gc = gc3;
+	gcset->fe.gc = gc0;
 
-	for (i = 0; i < 4; i++) {
-		if (gcset->fe[i].gc == NULL) {
-			gcset->fe[i].font = NULL;
-		} else {
-			XFontStruct	*font;
-			gcset->fe[i].font = font = XQueryFont(dpy, XGContextFromGC(gcset->fe[i].gc));
-			gcset->fe[i].flag = FONTQUERY;
-			if (IS2B(font))
-				gcset->fe[i].flag = TWOB;
-		}
+	if (gcset->fe.gc == NULL) {
+		gcset->fe.font = NULL;
+	} else {
+		XFontSet font;
+//		gcset->fe.font = font = XQueryFont(dpy, XGContextFromGC(gcset->fe[i].gc));
+		gcset->fe.flag = FONTQUERY;
+//		if (IS2B(font))
+//			gcset->fe[i].flag = TWOB;
 	}
 
 	return gcset;
-}
-
-void
-XWSSetMapping(gcset, g0map, g1map, g2map, g3map)
-XWSGC gcset;
-int g0map;
-int g1map;
-int g2map;
-int g3map;
-{
-	int	map[4];
-	int	i;
-
-	map[0] = g0map; map[1] = g1map; map[2] = g2map; map[3] = g3map;
-	for (i = 0; i < 4; i++) {
-		if (map[i] < 0)
-			continue;
-		else if (map[i] == 0)
-			gcset->fe[i].flag &= ~GRMAPPING;
-		else
-			gcset->fe[i].flag |= GRMAPPING;
-	}
 }
 
 int
@@ -206,31 +174,23 @@ int len;
 int *ascent;
 int *descent;
 {
-	FontEnt	*fep = &(gcset->fe[0]);
-	int	i;
+	FontEnt	*fep = &(gcset->fe);
+	int	i, j;
 	int	asc = 0;
 	int	dsc = 0;
+	int font_cnt;
+	XFontStruct **fs;
+	char **fn;
 
-	if (wstr) {
-		while (len-- > 0) {
-			i = GSET(*wstr++);
-			if (fep[i].font) {
-				if ((fep[i].font)->ascent > asc)
-					asc = (fep[i].font)->ascent;
-				if ((fep[i].font)->descent > dsc)
-					dsc = (fep[i].font)->descent;
-			}
-		}
-	} else {
-		for (i = 0; i < 4; i++) {
-			if (fep[i].font) {
-				if ((fep[i].font)->ascent > asc)
-					asc = (fep[i].font)->ascent;
-				if ((fep[i].font)->descent > dsc)
-					dsc = (fep[i].font)->descent;
-			}
-		}
-	}
+	if (fep->font) {
+		font_cnt = XFontsOfFontSet(fep->font, &fs, &fn);
+        for (j = 0; j < font_cnt; j++) {
+            if (fs[j]->ascent > asc)
+                asc = fs[j]->ascent;
+            if (fs[j]->descent > dsc)
+                dsc = fs[j]->descent;
+        }
+    }
 	*ascent = asc;
 	*descent = dsc;
 }
@@ -241,166 +201,13 @@ XWSGC gcset;
 wchar *wstr;
 int len;
 {
-	XChar2b			buf[bufsize];
-	XChar2b			*cp;
-	wchar			*wstr1 = wstr + len;
-	XChar2b			*cpend = buf + bufsize;
-	int			c;
 	int			width = 0;
-	int			gmask, gset;
 	FontEnt			*fe;
-	int			is2b;
-	int			grmap;
-
-	while (wstr < wstr1) {
-		gmask = *wstr & 0x8080;
-
-		switch (gmask) {
-		case G0MASK:
-			gset = 0;
-			break;
-		case G1MASK:
-			gset = 1;
-			break;
-		case G2MASK:
-			gset = 2;
-			break;
-		case G3MASK:
-			gset = 3;
-			break;
-		}
-
-		fe = &gcset->fe[gset];
-		is2b = fe->flag & TWOB;
-		grmap = (fe->flag & GRMAPPING) ? 0x80 : 0;
-		cp = buf;
-
-		if (fe->font == NULL) {
-			while (wstr < wstr1 && (*wstr & 0x8080) == gmask)
-				wstr++;
-			continue;
-		}
-
-		while (wstr < wstr1 && ((c = *wstr) & 0x8080) == gmask) {
-			if (cp >= cpend - 1) {
-				/* flush */
-				width += XTextWidth16(fe->font, buf, cp - buf);
-				cp = buf;
-			}
-			if (is2b)
-				cp->byte1 = ((c >> 8) & 0x7f) | grmap;
-			else
-				cp->byte1 = 0;
-			cp->byte2 = (c & 0x7f) | grmap;
-			cp++;
-			wstr++;
-		}
-
-		if (cp == buf)
-			continue;
-
-		/* flush */
-		width += XTextWidth16(fe->font, buf, cp - buf);
-	}
+    fe = &gcset->fe;
+    width = XwcTextEscapement(fe->font, wstr, len);
 
 	return width;
 }
-
-void
-XWSTextExtents(gcset, wstr, len, ascent, descent, overall)
-XWSGC gcset;
-wchar *wstr;
-int len;
-int *ascent;
-int *descent;
-XCharStruct *overall;
-{
-	XChar2b			buf[bufsize];
-	XChar2b			*cp;
-	wchar			*wstr1 = wstr + len;
-	XChar2b			*cpend = buf + bufsize;
-	int			c;
-	int			gmask, gset;
-	FontEnt			*fe;
-	int			is2b;
-	int			grmap;
-	int			dir, as, ds;
-	XCharStruct		oa;
-
-	*ascent = *descent = 0;
-	(void)bzero(overall, sizeof(XCharStruct));
-
-	while (wstr < wstr1) {
-		gmask = *wstr & 0x8080;
-
-		switch (gmask) {
-		case G0MASK:
-			gset = 0;
-			break;
-		case G1MASK:
-			gset = 1;
-			break;
-		case G2MASK:
-			gset = 2;
-			break;
-		case G3MASK:
-			gset = 3;
-			break;
-		}
-
-		fe = &gcset->fe[gset];
-		is2b = fe->flag & TWOB;
-		grmap = (fe->flag & GRMAPPING) ? 0x80 : 0;
-		cp = buf;
-
-		if (fe->font == NULL) {
-			while (wstr < wstr1 && (*wstr & 0x8080) == gmask)
-				wstr++;
-			continue;
-		}
-
-		while (wstr < wstr1 && ((c = *wstr) & 0x8080) == gmask) {
-			if (cp >= cpend - 1) {
-				/* flush */
-				XTextExtents16(fe->font, buf, cp - buf,
-					       &dir, &as, &ds, &oa);
-				cp = buf;
-				*ascent = MAX(*ascent, as);
-				*descent = MAX(*descent, ds);
-				overall->lbearing = MIN(overall->lbearing,
-							overall->width + oa.lbearing);
-				overall->rbearing = MAX(overall->rbearing,
-							overall->width + oa.rbearing);
-				overall->width += oa.width;
-				overall->ascent = MAX(overall->ascent, oa.ascent);
-				overall->descent = MAX(overall->descent, oa.descent);
-			}
-			if (is2b)
-				cp->byte1 = ((c >> 8) & 0x7f) | grmap;
-			else
-				cp->byte1 = 0;
-			cp->byte2 = (c & 0x7f) | grmap;
-			cp++;
-			wstr++;
-		}
-
-		if (cp == buf)
-			continue;
-
-		/* flush */
-		XTextExtents16(fe->font, buf, cp - buf, &dir, &as, &ds, &oa);
-		*ascent = MAX(*ascent, as);
-		*descent = MAX(*descent, ds);
-		overall->lbearing = MIN(overall->lbearing,
-					overall->width + oa.lbearing);
-		overall->rbearing = MAX(overall->rbearing,
-					overall->width + oa.rbearing);
-		overall->width += oa.width;
-		overall->ascent = MAX(overall->ascent, oa.ascent);
-		overall->descent = MAX(overall->descent, oa.descent);
-	}
-}
-
 
 /*
  * private functions
@@ -417,63 +224,11 @@ wchar *wstr;
 int len;
 int image;
 {
-	XChar2b			buf[bufsize];
-	XChar2b			*cp;
-	wchar			*wstr1 = wstr + len;
-	XChar2b			*cpend = buf + bufsize;
-	int			c;
 	int			sx = x;
-	int			gmask, gset;
 	FontEnt			*fe;
-	int			is2b;
-	int			grmap;
 
-	while (wstr < wstr1) {
-		gmask = *wstr & 0x8080;
-
-		switch (gmask) {
-		case G0MASK:
-			gset = 0;
-			break;
-		case G1MASK:
-			gset = 1;
-			break;
-		case G2MASK:
-			gset = 2;
-			break;
-		case G3MASK:
-			gset = 3;
-			break;
-		}
-
-		fe = &gcset->fe[gset];
-		is2b = fe->flag & TWOB;
-		grmap = (fe->flag & GRMAPPING) ? 0x80 : 0;
-		cp = buf;
-
-		if (fe->gc == NULL) {
-			while (wstr < wstr1 && (*wstr & 0x8080) == gmask)
-				wstr++;
-			continue;
-		}
-		while (wstr < wstr1 && ((c = *wstr) & 0x8080) == gmask) {
-			if (cp >= cpend - 1) {
-				/* flush */
-				x += flushstr(d, w, fe, x, y, buf, cp, image);
-				cp = buf;
-			}
-			if (is2b)
-				cp->byte1 = ((c >> 8) & 0x7f) | grmap;
-			else
-				cp->byte1 = 0;
-			cp->byte2 = (c & 0x7f) | grmap;
-			cp++;
-			wstr++;
-		}
-		/* flush */
-		x += flushstr(d, w, fe, x, y, buf, cp, image);
-		cp = buf;
-	}
+    fe = &gcset->fe;
+    x += flushstr(d, w, fe, x, y, wstr, wstr + len, image);
 
 	return x - sx;
 }
@@ -485,16 +240,16 @@ Drawable w;
 FontEnt *fe;
 int x;
 int y;
-XChar2b *cp0;
-XChar2b *cp1;
+wchar *cp0;
+wchar *cp1;
 int image;
 {
 	if (cp0 >= cp1 || fe->gc == NULL)
 		return 0;
 
 	if (image)
-		XDrawImageString16(d, w, fe->gc, x, y, cp0, cp1 - cp0);
+		XwcDrawImageString(d, w, fe->font, fe->gc, x, y, cp0, cp1 - cp0);
 	else
-		XDrawString16(d, w, fe->gc, x, y, cp0, cp1 - cp0);
-	return XTextWidth16(fe->font, cp0, cp1 - cp0);
+		XwcDrawString(d, w, fe->font, fe->gc, x, y, cp0, cp1 - cp0);
+	return XwcTextEscapement(fe->font, cp0, cp1 - cp0);
 }

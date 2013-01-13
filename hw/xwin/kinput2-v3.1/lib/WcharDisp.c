@@ -42,52 +42,29 @@ static char *rcsid = "$Id: WcharDisp.c,v 1.23 1994/10/27 08:29:05 ishisone Exp $
  */
 #define ALLOW_LOWERCASE_CHARSET_NAME
 
-static FontMapping defaultMapping = { { False, False, False, False } };
-
 static XtResource resources[] = {
 #define offset(field) XtOffset(WcharDisplayObject, wcharDisplay.field)
-    { XtNfontG0, XtCFont, XtRFontStruct, sizeof (XFontStruct *),
-	offset(defaultfonts[0]), XtRString, XtDefaultFont },
-    { XtNfontG1, XtCFont, XtRFontStruct, sizeof (XFontStruct *),
-	offset(defaultfonts[1]), XtRImmediate, (XtPointer)NULL },
-    { XtNfontG2, XtCFont, XtRFontStruct, sizeof (XFontStruct *),
-	offset(defaultfonts[2]), XtRImmediate, (XtPointer)NULL },
-    { XtNfontG3, XtCFont, XtRFontStruct, sizeof (XFontStruct *),
-	offset(defaultfonts[3]), XtRImmediate, (XtPointer)NULL },
-    { XtNfontMapping, XtCFontMapping, XtRFontMapping, sizeof (FontMapping),
-	offset(defaultmapping), XtRFontMapping, (XtPointer)&defaultMapping },
+    { XtNfontSet, XtCFontSet, XtRFontSet, sizeof (XFontSet),
+	offset(defaultfont), XtRString, XtDefaultFontSet },
 #undef offset
 };
 
-static WDCharSet defCharSet[] = {
-    { "ISO8859-1",		G0LCharSet },
-    { "JISX0201.1976-0",	G0LCharSet },	/* alternative */
-#ifdef ALLOW_LOWERCASE_CHARSET_NAME
-    { "iso8859-1",		G0LCharSet },
-    { "jisx0201.1976-0",	G0LCharSet },	/* alternative */
-#endif
-};
-
 static void ClassInitialize(void);
-static void StringToFontMapping(XrmValue *args, Cardinal *num_args, XrmValue *from, XrmValue *to);
 
 static void Initialize(Widget req, Widget new, ArgList args, Cardinal *num_args);
 static void Destroy(Widget w);
 static Boolean SetValues(Widget cur, Widget req, Widget wid, ArgList args, Cardinal *num_args);
 
-static void GetAtoms(WcharDisplayObject obj);
 static void GetGC(WcharDisplayObject obj);
-static void ChangeFont(WcharDisplayObject obj, XFontStruct **fonts, Boolean *mapping);
 
 static int StringWidth(Widget w, ICString *seg, int start, int end);
 static int LineHeight(Widget w, Position *ascentp);
 static void DrawString(Widget w, Widget canvas, ICString *seg, int start, int end, int x, int y);
 static int MaxChar(Widget w, ICString *seg, int start, int width);
-static void SetFonts(Widget w, XFontStruct  **fonts, Cardinal num_fonts);
 
 static int countControlChars(const wchar *wstr, int len);
 static void expandControlChars(const wchar *org, int orglen, wchar *res);
-static int charWidth(int c, XWSGC gcset);
+/* static int charWidth(int c, XWSGC gcset); */
 
 WcharDisplayClassRec wcharDisplayClassRec = {
   { /* object fields */
@@ -131,11 +108,6 @@ WcharDisplayClassRec wcharDisplayClassRec = {
     /* MaxChar			*/	MaxChar,
     /* DrawCursor		*/	XtInheritDrawCursor,
     /* GetCursorBounds		*/	XtInheritGetCursorBounds,
-    /* SetFonts			*/	SetFonts,
-  },
-  { /* wcharDisplay fields */
-    /* charset_specs		*/	defCharSet,
-    /* num_specs		*/	XtNumber(defCharSet),
   }
 };
 
@@ -145,48 +117,6 @@ WidgetClass wcharDisplayObjectClass = (WidgetClass)&wcharDisplayClassRec;
 static void
 ClassInitialize(void)
 {
-    /* add String -> FontMapping converter */
-    XtAddConverter(XtRString, XtRFontMapping, StringToFontMapping,
-		   (XtConvertArgList)NULL, (Cardinal)0);
-}
-
-/* ARGSUSED */
-static void
-StringToFontMapping(XrmValue *args, Cardinal *num_args, XrmValue *from, XrmValue *to)
-{
-    char *s = (char *)from->addr;
-    char buf[128];
-    static FontMapping fm;
-    int c;
-    int i;
-
-    for (i = 0; i < 4; i++) fm.grmapping[i] = False;
-    to->size = sizeof(FontMapping);
-    to->addr = (caddr_t)&fm;
-
-    if (strlen(s) + 1 > sizeof(buf)) return;
-
-    XmuCopyISOLatin1Lowered(buf, s);
-    s = buf;
-    for (i = 0; i < 4; i++) {
-	while ((c = *s) != '\0' && (c == ' ' || c == '\t' || c == '\n')) s++;
-	if (c == '\0') break;
-	if (c == '/' || c == ',') {
-	    s++;
-	    continue;
-	}
-	if (!strncmp(s, "gl", 2)) {
-	    fm.grmapping[i] = False;
-	} else if (!strncmp(s, "gr", 2)) {
-	    fm.grmapping[i] = True;
-	} else {
-	    XtStringConversionWarning(s, XtRFontMapping);
-	}
-	s += 2;
-	while ((c = *s) != '\0' && (c == ' ' || c == '\t' || c == '\n')) s++;
-	if (c == '\0') break;
-	if (c == '/' || c == ',') s++;
-    }
 }
 
 /* ARGSUSED */
@@ -208,16 +138,8 @@ Initialize(Widget req, Widget new, ArgList args, Cardinal *num_args)
 			    RootWindowOfScreen(XtScreenOfObject((Widget)obj)),
 			    stipple_bits, 16, 16);
 
-    for (i = 0; i < 4; i++) {
-	obj->wcharDisplay.fonts[i] = obj->wcharDisplay.defaultfonts[i];
-	obj->wcharDisplay.grmapping[i] =
-		obj->wcharDisplay.defaultmapping.grmapping[i];
-    }
+    obj->wcharDisplay.font = obj->wcharDisplay.defaultfont;
 
-    obj->wcharDisplay.num_specs = class->wcharDisplay_class.num_specs;
-    obj->wcharDisplay.charset_specs = class->wcharDisplay_class.charset_specs;
-
-    GetAtoms(obj);
     GetGC(obj);
 }
 
@@ -226,7 +148,6 @@ Destroy(Widget w)
 {
     WcharDisplayObject obj = (WcharDisplayObject)w;
 
-    XtFree((char *)obj->wcharDisplay.fontspecs);
     XtWSReleaseGCSet(w, obj->wcharDisplay.gcset_normal);
     XtWSReleaseGCSet(w, obj->wcharDisplay.gcset_rev);
     XFreePixmap(XtDisplayOfObject((Widget)obj), obj->wcharDisplay.stipple);
@@ -242,14 +163,9 @@ SetValues(Widget cur, Widget req, Widget wid, ArgList args, Cardinal *num_args)
     int i;
 
 #define wd wcharDisplay 
-    for (i = 0; i < 4; i++) {
-	if ((new->wd.defaultfonts[i] != old->wd.defaultfonts[i] ||
-	     new->wd.defaultmapping.grmapping[i] !=
-			new->wd.defaultmapping.grmapping[i]) &&
-	    new->wd.fonts[i] == old->wd.defaultfonts[i]) {
-	    redraw = True;
-	    break;
-	}
+    if (new->wd.defaultfont != old->wd.defaultfont &&
+        new->wd.font == old->wd.defaultfont) {
+        redraw = True;
     }
     if (redraw ||
 	new->convDisplay.foreground != old->convDisplay.foreground ||
@@ -265,56 +181,11 @@ SetValues(Widget cur, Widget req, Widget wid, ArgList args, Cardinal *num_args)
 }
 
 static void
-GetAtoms(WcharDisplayObject obj)
-{
-    Display *dpy = XtDisplayOfObject((Widget)obj);
-    WDCharSet *csp;
-    FontSpec *fsp;
-    Cardinal nspecs;
-    char buf[128];
-    char *p, *q;
-    int i;
-    String params[1];
-    Cardinal num_params;
-
-    if ((nspecs = obj->wcharDisplay.num_specs) == 0) {
-	params[0] = XtClass((Widget)obj)->core_class.class_name;
-	num_params = 1;
-	XtAppErrorMsg(XtWidgetToApplicationContext((Widget)obj),
-		      "noEntry", "charSpec", "WidgetError",
-		      "%s: has no character set spec.",
-		      params, &num_params);
-    }
-
-    csp = obj->wcharDisplay.charset_specs;
-    fsp = (FontSpec *)XtMalloc(sizeof(FontSpec) * obj->wcharDisplay.num_specs);
-    obj->wcharDisplay.fontspecs = fsp;
-
-    for (i = 0; i < nspecs; i++, csp++, fsp++) {
-	p = csp->charset;
-	q = buf;
-	while (*p != '\0' && *p != '-') *q++ = *p++;
-	if (*p++ == '\0' || *p == '\0') {
-	    params[0] = XtClass((Widget)obj)->core_class.class_name;
-	    num_params = 1;
-	    XtAppErrorMsg(XtWidgetToApplicationContext((Widget)obj),
-			  "invalidSpec", "charSetSpec", "WidgetError",
-			  "%s: has invalid character set spec.",
-			  params, &num_params);
-	}
-	*q = '\0';
-	fsp->registry = CachedInternAtom(dpy, buf, False);
-	fsp->encoding = CachedInternAtom(dpy, p, False);
-    }
-}
-
-static void
 GetGC(WcharDisplayObject obj)
 {
-    XtGCMask mask = GCFont|GCForeground|GCBackground;
+    XtGCMask mask = GCForeground|GCBackground;
     XGCValues values;
     int ascent, descent;
-    Boolean *map = obj->wcharDisplay.grmapping;
 
     values.function = GXcopy;
     values.foreground = obj->convDisplay.foreground;
@@ -328,53 +199,20 @@ GetGC(WcharDisplayObject obj)
     mask = GCFunction|GCForeground|GCFillStyle|GCStipple;
     obj->wcharDisplay.gc_stipple = XtGetGC((Widget)obj, mask, &values);
 
-    mask = GCFont|GCFunction|GCForeground|GCBackground;
+    mask = GCFunction|GCForeground|GCBackground;
     values.function = GXcopy;
     values.foreground = obj->convDisplay.foreground;
     values.background = obj->convDisplay.background;
     obj->wcharDisplay.gcset_normal = XtWSGetGCSet((Widget)obj, mask, &values,
-						  obj->wcharDisplay.fonts[0],
-						  obj->wcharDisplay.fonts[1],
-						  obj->wcharDisplay.fonts[2],
-						  obj->wcharDisplay.fonts[3]);
+						  obj->wcharDisplay.font);
     values.foreground = obj->convDisplay.background;
     values.background = obj->convDisplay.foreground;
     obj->wcharDisplay.gcset_rev = XtWSGetGCSet((Widget)obj, mask, &values,
-					       obj->wcharDisplay.fonts[0],
-					       obj->wcharDisplay.fonts[1],
-					       obj->wcharDisplay.fonts[2],
-					       obj->wcharDisplay.fonts[3]);
-
-    /* set font mapping */
-    XWSSetMapping(obj->wcharDisplay.gcset_normal,
-		  map[0], map[1], map[2], map[3]);
-    XWSSetMapping(obj->wcharDisplay.gcset_rev,
-		  map[0], map[1], map[2], map[3]);
+					       obj->wcharDisplay.font);
 
     XWSFontHeight(obj->wcharDisplay.gcset_normal, NULL, 0, &ascent, &descent);
     obj->wcharDisplay.ascent = ascent;
     obj->wcharDisplay.fontheight = ascent + descent;
-}
-
-static void
-ChangeFont(WcharDisplayObject obj, XFontStruct **fonts, Boolean *mapping)
-{
-    Boolean newgc = False;
-    int i;
-
-    for (i = 0; i < 4; i++) {
-	if (fonts[i] != obj->wcharDisplay.fonts[i] ||
-	    mapping[i] != obj->wcharDisplay.grmapping[i]) {
-	    obj->wcharDisplay.fonts[i] = fonts[i];
-	    obj->wcharDisplay.grmapping[i] = mapping[i];
-	    newgc = True;
-	}
-    }
-    if (newgc) {
-	XtWSReleaseGCSet((Widget)obj, obj->wcharDisplay.gcset_normal);
-	XtWSReleaseGCSet((Widget)obj, obj->wcharDisplay.gcset_rev);
-	GetGC(obj);
-    }
 }
 
 static int
@@ -461,18 +299,18 @@ DrawString(Widget w, Widget canvas, ICString *seg, int start, int end,
 	attr = UNDERLINED;
     }
 
-    if ((nctl = countControlChars(wstr, len)) == 0) {
+    /* if ((nctl = countControlChars(wstr, len)) == 0) { */
 	width = XWSDrawImageString(dpy, win, gcset,
 				   x, y + obj->wcharDisplay.ascent,
 				   wstr, len);
-    } else {
-	wchar *s = (wchar *)LOCAL_ALLOC((len + nctl) * sizeof(wchar));
-	expandControlChars(wstr, len, s);
-	width = XWSDrawImageString(dpy, win, gcset,
-				   x, y + obj->wcharDisplay.ascent,
-				   s, len + nctl);
-	LOCAL_FREE(s);
-    }
+    /* } else { */
+	/* wchar *s = (wchar *)LOCAL_ALLOC((len + nctl) * sizeof(wchar)); */
+	/* expandControlChars(wstr, len, s); */
+	/* width = XWSDrawImageString(dpy, win, gcset, */
+	/* 			   x, y + obj->wcharDisplay.ascent, */
+	/* 			   s, len + nctl); */
+	/* LOCAL_FREE(s); */
+    /* } */
 
     if (attr == UNDERLINED) {
 	int uloffset = 1;
@@ -495,74 +333,25 @@ DrawString(Widget w, Widget canvas, ICString *seg, int start, int end,
 static int
 MaxChar(Widget w, ICString *seg, int start, int width)
 {
-    WcharDisplayObject obj = (WcharDisplayObject)w;
-    XWSGC gcset = obj->wcharDisplay.gcset_normal;
-    wchar *sp = (wchar *)seg->data + start;
-    wchar *ep = (wchar *)seg->data + seg->nchars;
     int cwidth;
     int chars;
 
-    chars = 0;
-    while (sp < ep) {
-	cwidth = charWidth(*sp++, gcset);
-	if (width < cwidth) break;
-	chars++;
-	if ((width -= cwidth) == 0) break;
+    chars = 1;
+    while (chars <= width) {
+        cwidth = StringWidth(w, seg, 0, chars);
+        if (width < cwidth) break;
+        chars++;
+        if (width == cwidth) break;
     }
+    /* while (sp < ep) { */
+    /*     cwidth = charWidth(*sp++, gcset); */
+    /*     if (width < cwidth) break; */
+    /*     chars++; */
+    /*     if ((width -= cwidth) == 0) break; */
+    /* } */
     return chars;
 }
 
-static void
-SetFonts(Widget w, XFontStruct  **fonts, Cardinal num_fonts)
-{
-    WcharDisplayObject obj = (WcharDisplayObject)w;
-    WDCharSet *csp = obj->wcharDisplay.charset_specs;
-    FontSpec *fsp = obj->wcharDisplay.fontspecs;
-    Cardinal nspecs = obj->wcharDisplay.num_specs;
-    Cardinal i, j;
-    XFontStruct *pickedfonts[4];
-    Boolean mapping[4];
-    static int csetmask[4] = {
-	G0LCharSet|G0RCharSet,
-	G1LCharSet|G1RCharSet,
-	G2LCharSet|G2RCharSet,
-	G3LCharSet|G3RCharSet,
-    };
-
-// >> Y.Arai
-TRACE(("SetFonts(num_fonts = %d)\n", num_fonts));
-// << Y.Arai
-
-    if (num_fonts == 0) {
-	ChangeFont(obj, obj->wcharDisplay.defaultfonts,
-		   obj->wcharDisplay.defaultmapping.grmapping);
-	return;
-    }
-
-    for (i = 0; i < 4; i++) pickedfonts[i] = NULL;
-
-    (void)_CDPickupFonts(w, fsp, nspecs, fonts, num_fonts);
-
-#define GRMAP	(G0RCharSet|G1RCharSet|G2RCharSet|G3RCharSet)
-    for (j = 0; j < nspecs; j++, fsp++, csp++) {
-	if (fsp->font == NULL) continue;
-	for (i = 0; i < 4; i++) {
-	    if (pickedfonts[i] == NULL && (csp->flag & csetmask[i])) {
-		pickedfonts[i] = fsp->font;
-		mapping[i] = (csp->flag & csetmask[i] & GRMAP) ? True : False;
-	    }
-	}
-    }
-#undef GRMAP
-    for (i = 0; i < 4; i++) {
-	if (pickedfonts[i] == NULL) {
-	    pickedfonts[i] = obj->wcharDisplay.defaultfonts[i];
-	    mapping[i] = obj->wcharDisplay.defaultmapping.grmapping[i];
-	}
-    }
-
-    ChangeFont(obj, pickedfonts, mapping);
-}
 
 /* countControlChars -- count number of control characters in a string */
 static int
@@ -575,7 +364,7 @@ countControlChars(const wchar *wstr, int len)
 	if (*wstr < 0x20 || *wstr == 0x7f) n++;
 	wstr++;
     }
-    return n;  
+    return n;
 }
 
 /* expandControlChars -- convert control characters into '^?' format */
@@ -612,97 +401,6 @@ expandControlChars(const wchar *org, int orglen, wchar *res)
 #define CHAR_EXIST(csp) \
     ((csp)->width != 0 || ((csp)->rbearing != 0) || ((csp)->lbearing != 0))
 
-static int
-defaultCharWidth(XFontStruct *font)
-{
-    int defchar = font->default_char;
-
-    if (font->min_byte1 || font->max_byte1) {
-	int row = defchar >> 8;
-	int col = defchar & 0xff;
-	if (WITHIN_RANGE_2D(row, col, font)) {
-	    if (font->per_char == NULL) {
-		return font->min_bounds.width;
-	    } else {
-		XCharStruct *csp = CHAR_INFO_2D(row, col, font);
-		return CHAR_EXIST(csp) ? csp->width : 0;
-	    }
-	} else {
-	    return 0;
-	}
-    } else {
-	if (WITHIN_RANGE(defchar, font)) {
-	    if (font->per_char == NULL) {
-		return font->min_bounds.width;
-	    } else {
-		XCharStruct *csp = CHAR_INFO(defchar, font);
-		return CHAR_EXIST(csp) ? csp->width : 0;
-	    }
-	} else {
-	    return 0;
-	}
-    }
-}
-
-/* charWidth -- returns width of the specified character */
-static int
-charWidth(int c, XWSGC gcset)
-{
-    register XFontStruct *font;
-    int width;
-    int gset;
-    int nonPrinting = (c < 0x20 || c == 0x7f);    
-
-    if (nonPrinting) c ^= 0x40;
-
-    switch (c & 0x8080) {
-    case 0x0000: gset = 0; break;
-    case 0x8080: gset = 1; break;
-    case 0x0080: gset = 2; break;
-    case 0x8000: gset = 3; break;
-    }
-
-    if ((font = gcset->fe[gset].font) == NULL) return 0;
-
-    if (gcset->fe[gset].flag & GRMAPPING) {
-	c |= 0x8080;
-    } else {
-	c &= 0x7f7f;
-    }
-
-    if (gcset->fe[gset].flag & TWOB) {
-	register int row = (c >> 8) & 0xff;
-	register int col = c & 0xff;
-	if (WITHIN_RANGE_2D(row, col, font)) {
-	    if (font->per_char == NULL) {
-		width = font->min_bounds.width;
-	    } else {
-		XCharStruct *csp = CHAR_INFO_2D(row, col, font);
-
-		width = CHAR_EXIST(csp) ? csp->width : defaultCharWidth(font);
-	    }
-	} else {
-	    width = defaultCharWidth(font);
-	}
-    } else {
-	c &= 0xff;
-	if (WITHIN_RANGE(c, font)) {
-	    if (font->per_char == NULL) {
-		width = font->min_bounds.width;
-	    } else {
-		XCharStruct *csp = CHAR_INFO(c, font);
-
-		width = CHAR_EXIST(csp) ? csp->width : defaultCharWidth(font);
-	    }
-	} else {
-	    width = defaultCharWidth(font);
-	}
-    }
-    if (nonPrinting) width += charWidth('^', gcset);
-
-    return width;
-}
-
 
 /*
  * jpWcharDisplay definition
@@ -714,45 +412,14 @@ charWidth(int c, XWSGC gcset)
  *	    G3: unused
  */
 
-static FontMapping jpDefaultMapping = { { False, False, True, False } };
-
-#define JPFONT_ASCII	"-Misc-Fixed-Medium-R-*--14-*-*-*-C-*-ISO8859-1"
-#define JPFONT_KANJI	"-Misc-Fixed-Medium-R-*--14-*-*-*-C-*-JISX0208.1983-0"
-#define JPFONT_KANA	"-Misc-Fixed-Medium-R-*--14-*-*-*-C-*-JISX0201.1976-0"
+#define JPFONT_ASCII	"-Misc-Fixed-Medium-R-*--14-*-*-*-C-*-ISO8859-1,-Misc-Fixed-Medium-R-*--14-*-*-*-C-*-JISX0208.1983-0,-Misc-Fixed-Medium-R-*--14-*-*-*-C-*-JISX0201.1976-0"
 
 static XtResource jpresources[] = {
     /* only override superclass's default */
 #define offset(field) XtOffset(JpWcharDisplayObject, wcharDisplay.field)
-    { XtNfont, XtCFont, XtRFontStruct, sizeof (XFontStruct *),
-	offset(defaultfonts[0]), XtRString, JPFONT_ASCII },
-    { XtNkanjiFont, XtCKanjiFont, XtRFontStruct, sizeof (XFontStruct *),
-	offset(defaultfonts[1]), XtRString, JPFONT_KANJI },
-    { XtNkanaFont, XtCKanaFont, XtRFontStruct, sizeof (XFontStruct *),
-	offset(defaultfonts[2]), XtRString, JPFONT_KANA },
-    { XtNfontG3, "Not.used", XtRFontStruct, sizeof (XFontStruct *),
-	offset(defaultfonts[3]), XtRImmediate, (XtPointer)NULL },
-    { XtNfontMapping, XtCFontMapping, XtRFontMapping, sizeof (FontMapping),
-	offset(defaultmapping), XtRFontMapping, (XtPointer)&jpDefaultMapping },
+    { XtNfontSet, XtCFontSet, XtRFontSet, sizeof (XFontSet),
+	offset(defaultfont), XtRString, JPFONT_ASCII },
 #undef offset
-};
-
-static WDCharSet jpCharSet[] = {
-    { "ISO8859-1",		G0LCharSet },		/* my preference */
-    { "JISX0201.1976-0",	G0LCharSet | G2RCharSet },
-    { "JISX0208.1990-0",	G1LCharSet },
-    { "JISX0208.1983-0",	G1LCharSet },
-    { "JISX0208.1978-0",	G1LCharSet },
-    { "JISX0208.1983-1",	G1RCharSet },
-    { "JISX0208.1978-1",	G1RCharSet },
-#ifdef ALLOW_LOWERCASE_CHARSET_NAME
-    { "iso8859-1",		G0LCharSet },		/* my preference */
-    { "jisx0201.1976-0",	G0LCharSet | G2RCharSet },
-    { "jisx0208.1990-0",	G1LCharSet },
-    { "jisx0208.1983-0",	G1LCharSet },
-    { "jisx0208.1978-0",	G1LCharSet },
-    { "jisx0208.1983-1",	G1RCharSet },
-    { "jisx0208.1978-1",	G1RCharSet },
-#endif
 };
 
 JpWcharDisplayClassRec jpWcharDisplayClassRec = {
@@ -797,14 +464,6 @@ JpWcharDisplayClassRec jpWcharDisplayClassRec = {
     /* MaxChar			*/	XtInheritMaxChar,
     /* DrawCursor		*/	XtInheritDrawCursor,
     /* GetCursorBounds		*/	XtInheritGetCursorBounds,
-    /* SetFonts			*/	XtInheritSetFonts,
-  },
-  { /* wcharDisplay fields */
-    /* charset_specs		*/	jpCharSet,
-    /* num_specs		*/	XtNumber(jpCharSet),
-  },
-  { /* jpWcharDisplay fields */
-    /* empty			*/	0,
   },
 };
 

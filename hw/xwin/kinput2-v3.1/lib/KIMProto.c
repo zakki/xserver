@@ -74,8 +74,6 @@ static XtResource resources[] = {
 	offset(input_object_class), XtRImmediate, (XtPointer)NULL },
     { XtNdisplayObjectClass, XtCClass, XtRPointer, sizeof(WidgetClass),
 	offset(display_object_class), XtRImmediate, (XtPointer)NULL },
-    { XtNdefaultFontList, XtCFontList, XtRString, sizeof(String),
-	offset(default_fontlist), XtRImmediate, (XtPointer)NULL },
     { XtNconversionStartKeys, XtCConversionStartKeys, XtRString, sizeof(String),
 	offset(conversion_start_keys), XtRImmediate, (XtPointer)NULL },
     { XtNforeground, XtCForeground, XtRPixel, sizeof (Pixel),
@@ -235,31 +233,19 @@ TRACE(("server_name = %s\n", ipw->imp.server_name));
      */
     ipw->imp.font_bank = FontBankCreate(XtDisplay(new), ipw->imp.language);
     if (ipw->imp.font_bank == NULL) {
-	/*
-	 * The specified language is not supported.
-	 */
-	String params[2];
-	Cardinal num_params;
+        /*
+         * The specified language is not supported.
+         */
+        String params[2];
+        Cardinal num_params;
 
-	params[0] = XtClass(new)->core_class.class_name;
-	params[1] = ipw->imp.language;
-	num_params = 2;
-	XtAppErrorMsg(XtWidgetToApplicationContext(new),
-		      "initializeError", "invalidValue", "WidgetError",
-		      "%s: language %s not supported",
-		      params, &num_params);
-    }
-
-    if (ipw->imp.default_fontlist != NULL) {
-	ipw->imp.default_fontlist = XtNewString(ipw->imp.default_fontlist);
-
-	DDPRINT(2, ("cache default fonts: %s\n", ipw->imp.default_fontlist));
-	ipw->imp.default_fonts = FontBankGet(ipw->imp.font_bank,
-					     ipw->imp.default_fontlist,
-					     &ipw->imp.num_default_fonts);
-    } else {
-	ipw->imp.default_fonts = NULL;
-	ipw->imp.num_default_fonts = 0;
+        params[0] = XtClass(new)->core_class.class_name;
+        params[1] = ipw->imp.language;
+        num_params = 2;
+        XtAppErrorMsg(XtWidgetToApplicationContext(new),
+        	      "initializeError", "invalidValue", "WidgetError",
+        	      "%s: language %s not supported",
+        	      params, &num_params);
     }
 
     /*
@@ -385,7 +371,6 @@ Widget w;
 
     XtFree(ipw->imp.server_name);
     XtFree(ipw->imp.locales);
-    if (ipw->imp.default_fontlist != NULL) XtFree(ipw->imp.default_fontlist);
     if (ipw->imp.trigger_keys != NULL) XtFree((char *)ipw->imp.trigger_keys);
 
     for (i = 0; i < ipw->imp.converter.num_locales; i++) {
@@ -417,15 +402,6 @@ Widget w;
 	XtRemoveInput(ipw->imp.unix_id);
 	(void)close(ipw->imp.unix_sock);
 	XtFree(ipw->imp.unix_path);
-    }
-
-    /*
-     * Unload default fonts.
-     */
-    if (ipw->imp.num_default_fonts > 0) {
-	FontBankFreeFonts(ipw->imp.font_bank,
-			  ipw->imp.default_fonts,
-			  ipw->imp.num_default_fonts);
     }
 
     /*

@@ -78,8 +78,6 @@ typedef struct {
     IMTriggerKey *trigger_keys;		/* conversion start trigger keys */
     int num_trigger_keys;
     FontBank font_bank;
-    XFontStruct **default_fonts;
-    int num_default_fonts;
     XIOEHandle ioe_handle;
 
     /* atoms */

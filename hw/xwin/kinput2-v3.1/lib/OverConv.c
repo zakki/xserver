@@ -978,13 +978,6 @@ TRACE(("OverTheSpotConversion:%s()\n", __FUNCTION__));
      * error when changing GCs.
      */
 
-    if (mask & CAFonts) {
-	TRACE(("\tchanging fonts...\n"));
-	CDSetFonts(dispobj, value->fonts, value->num_fonts);
-    } else {
-	/* reset to default */
-	CDSetFonts(dispobj, (XFontStruct **)NULL, 0);
-    }
     if (mask & CAColor) {
 	TRACE(("\tchanging colors...\n"));
 	XtVaSetValues(dispobj,
@@ -1025,7 +1018,6 @@ TRACE(("OverTheSpotConversion:%s()\n", __FUNCTION__));
     }
     if (mask & CAFonts) {
 	TRACE(("\tchanging fonts...\n"));
-	CDSetFonts(dispobj, value->fonts, value->num_fonts);
 	ocw->overthespot.lineheight = CDLineHeight(dispobj,
 						   &ocw->overthespot.ascent);
 	redraw = NeedReconfig;
@@ -1131,13 +1123,6 @@ TRACE(("OverTheSpotConversion:%s() exit.\n", __FUNCTION__));
      * order of changing display object resources is important.
      * see comment in setupDisplayObject() for details.
      */
-    if (mask & CAStatusFonts) {
-	TRACE(("\tchanging fonts...\n"));
-	CDSetFonts(dispobj, value->status_fonts, value->num_status_fonts);
-    } else {
-	/* reset to default */
-	CDSetFonts(dispobj, (XFontStruct **)NULL, 0);
-    }
     if (mask & CAColor) {
 	TRACE(("\tchanging colors...\n"));
 	XtVaSetValues(dispobj,
@@ -1232,7 +1217,6 @@ TRACE(("OverTheSpotConversion:%s() exit.\n", __FUNCTION__));
     }
     if (mask & CAStatusFonts) {
 	TRACE(("\tchanging fonts...\n"));
-	CDSetFonts(dispobj, value->status_fonts, value->num_status_fonts);
 	ICLRecomputeSize(mode);
 	redraw = NeedRedraw;
     }

@@ -29,7 +29,6 @@ typedef struct {
     int		(*MaxChar)(Widget, ICString*, int, int);
     void	(*DrawCursor)(Widget, Widget, int, int, int);
     void	(*GetCursorBounds)(Widget,XRectangle*);
-    void	(*SetFonts)(Widget, XFontStruct**, Cardinal);
 } ConvDisplayClassPart;
 
 typedef struct _ConvDisplayClassRec {
@@ -64,25 +63,5 @@ extern ConvDisplayClassRec	convDisplayClassRec;
 #define XtInheritMaxChar	(int(*)())_XtInherit
 #define XtInheritDrawCursor	(void(*)())_XtInherit
 #define XtInheritGetCursorBounds	(void(*)())_XtInherit
-#define XtInheritSetFonts	(void(*)())_XtInherit
-
-
-/* semi-public function */
-
-typedef struct {
-    Atom	registry;	/* ex) "ISO8859", "JISX0208.1983" */
-    Atom	encoding;	/* ex) "0", "1" */
-    XFontStruct *font;		/* return value */
-} FontSpec;
-
-extern int _CDPickupFonts(
-#if NeedFunctionPrototypes
-	Widget		/* widget */,
-	FontSpec *	/* spec */,
-	Cardinal	/* num_specs */,
-	XFontStruct **	/* fonts */,
-	Cardinal	/* num_fonts */
-#endif
-);
 
 #endif

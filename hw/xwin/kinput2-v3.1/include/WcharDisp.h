@@ -26,20 +26,16 @@
 
   name		class		type		default		access
   ----------------------------------------------------------------------------
-  fontG0	Font		FontStruct	XtDefaultFont	CSG
-  fontG1	Font		FontStruct	NULL		CSG
-  fontG2	Font		FontStruct	NULL		CSG
-  fontG3	Font		FontStruct	NULL		CSG
-  fontMapping	FontMapping	FontMappng	GL/GL/GL/GL	CSG
+  fontG0	Font		FontSet	XtDefaultFont	CSG
 
 
   JpWcharDisplay new resources:
 
-  name		class		type		default	access	note
+  name		class		type	default	access	note
   ----------------------------------------------------------------------------
-  font		Font		FontStruct	*1	CSG	*4
-  kanjiFont	KanjiFont	FontStruct	*2	CSG	*5
-  kanaFont	KanaFont	FontStruct	*3	CSG	*6
+  font		Font		FontSet	*1		CSG	*4
+  kanjiFont	KanjiFont	FontSet	*2		CSG	*5
+  kanaFont	KanaFont	FontSet	*3		CSG	*6
 
   *1) "-Misc-Fixed-Medium-R-*--14-*-*-*-C-*-ISO8859-1"
   *2) "-Misc-Fixed-Medium-R-*--14-*-*-*-C-*-JISX0208.1983-0"
@@ -52,27 +48,15 @@
 
   JpWcharDisplay override resource:
 
-  name		class		type		default	access	note
-  ----------------------------------------------------------------------------
-  fontMapping	FontMapping	FontMappng	GL/GL/GR/GL	CSG
-
 */
 
 #include "ConvDisp.h"
 #include "WStr.h"
 
-#define XtNfontG0 "fontG0"
-#define XtNfontG1 "fontG1"
-#define XtNfontG2 "fontG2"
-#define XtNfontG3 "fontG3"
-
-#define XtNfontMapping "fontMapping"
-#define XtCFontMapping "FontMapping"
-
-#define XtNkanjiFont "kanjiFont"
-#define XtCKanjiFont "KanjiFont"
-#define XtNkanaFont "kanaFont"
-#define XtCKanaFont "KanaFont"
+/* #define XtNkanjiFont "kanjiFont" */
+/* #define XtCKanjiFont "KanjiFont" */
+/* #define XtNkanaFont "kanaFont" */
+/* #define XtCKanaFont "KanaFont" */
 
 typedef struct _WcharDisplayClassRec	*WcharDisplayObjectClass;
 typedef struct _WcharDisplayRec		*WcharDisplayObject;
@@ -85,4 +69,3 @@ typedef struct _JpWcharDisplayRec	*JpWcharDisplayObject;
 extern WidgetClass	jpWcharDisplayObjectClass;
 
 #endif /* _WcharDisplay_h */
-

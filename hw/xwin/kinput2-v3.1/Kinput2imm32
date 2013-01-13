@@ -26,9 +26,29 @@ Kinput2imm32.height: 1
 !! fonts to be used by root-window type conversion widget and
 !! candidate selection widget
 !!
-*Font: -*-fixed-medium-r-normal--14-*-*-*-c-*-iso8859-1
+*Font: -*-fixed-medium-r-normal--14-*-*-*-c-*-iso8859-1, \
+	   -misc-fixed-medium-r-normal--14-*-*-*-c-*-jisx0208.1983-0, \
+	   -*-fixed-medium-r-normal--14-*-*-*-c-*-jisx0201.1976-0
 *KanjiFont: -misc-fixed-medium-r-normal--14-*-*-*-c-*-jisx0208.1983-0
 *KanaFont: -*-fixed-medium-r-normal--14-*-*-*-c-*-jisx0201.1976-0
+!!
+!!	Wnn setup
+!!
+*CcWnn.Jserver:		unix
+!*CcWnn.jserver2nd:	localhost
+*CcWnn.ccdef:		ccdef.kinput2.egg
+*CcWnn.wnnEnvrc:	/etc/FreeWnn/ja/wnnenvrc
+!*CcWnn.wnnEnvrc4:	"wnenvrc-file-for-Wnn4"
+!*CcWnn.wnnEnvrc6:	"wnenvrc-file-for-Wnn6"
+!!
+!!	Canna setup for version 2.x, 3.x
+!!
+*Canna.Cannahost:	localhost
+!*Canna.Cannafile:	"canna-initialization-file"
+!!
+!!	Sj3 setup
+!*Sj3.sj3serv:		"primary-sj3serv-host"
+!*Sj3.sj3serv2:		"secondary-sj3serv-host-if-any"
 !!
 !! candidate selection
 !!
@@ -77,7 +97,7 @@ Kinput2imm32.height: 1
 *IMProtocol.locales: ja_JP.SJIS, ja_JP.EUC, ja_JP.UTF-8, ja_JP, japanese, japan, ja, en_US.UTF-8
 ! common to XimpProtocol and IMProtocol
 *defaultFontList: -misc-fixed-medium-r-normal--14-*-*-*-c-*
-*ConversionStartKeys: Shift Ctrl<Key>F12
+*ConversionStartKeys: Shift Ctrl<Key>space
 !!
 !! sending back unused keypress events
 !!

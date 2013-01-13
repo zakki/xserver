@@ -146,28 +146,6 @@ extern void CDGetCursorBounds(
 #endif
 );
 
-
-/*
- * void CDSetFonts(Widget object, XFontStruct **fontset, Cardinal num_fonts)
- *		(note: fontset is an array of (XFontStruct *).)
- *	描画に fontset で指定されるフォントを使用するように設定する
- *	オブジェクトは fontset の中から自分の使用するキャラクタセットの
- *	フォントを選んで設定する
- *	もし、必要なキャラクタセットのフォントがなければ適当なフォントを
- *	設定する
- *	これは他のキャラクタセットのフォントに合わせて選ぶのがよいと
- *	思われるが、デフォルトフォントで間に合わせてもよい
- *	もし num_fonts が 0 であれば各オブジェクトのデフォルトフォントを
- *	使用するように設定される
- */
-extern void CDSetFonts(
-#if NeedFunctionPrototypes
-	Widget		/* object */,
-	XFontStruct **	/* fontset */,
-	Cardinal	/* num_fonts */
-#endif
-);
-
 /*
  * void CDSetBlockCursor(Widget object, XRectangle *shape)
  *	shape で指定されるブロックカーソルを設定する

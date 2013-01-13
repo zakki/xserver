@@ -26,7 +26,9 @@ Kinput2imm32.height: 1
 !! fonts to be used by root-window type conversion widget and
 !! candidate selection widget
 !!
-*Font: -*-fixed-medium-r-normal--14-*-*-*-c-*-iso8859-1
+*Font: -*-fixed-medium-r-normal--14-*-*-*-c-*-iso8859-1, \
+	   -misc-fixed-medium-r-normal--14-*-*-*-c-*-jisx0208.1983-0, \
+	   -*-fixed-medium-r-normal--14-*-*-*-c-*-jisx0201.1976-0
 *KanjiFont: -misc-fixed-medium-r-normal--14-*-*-*-c-*-jisx0208.1983-0
 *KanaFont: -*-fixed-medium-r-normal--14-*-*-*-c-*-jisx0201.1976-0
 !!

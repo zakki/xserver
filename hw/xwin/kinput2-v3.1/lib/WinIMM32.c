@@ -759,6 +759,7 @@ TRACE(("    Call XWinIMEGetTargetString...\n"));	/*YA*/
 	string = NULL;
 	return -1;
     }
+    wprintf(L"a>>%ls\n", szCompositionString);
 
     // 戻すためのバッファを確保
     *length = convJWStoCT(szCompositionString, (unsigned char *)NULL, 0);
@@ -815,6 +816,7 @@ TRACE(("    WinIMM32: StatusString\n"));	/*YA*/
     wbuf = (wchar *)XtMalloc((wlen + 1) * sizeof(wchar));
     (void)bcopy(seg->data, (char *)wbuf, sizeof(wchar) * wlen);
     wbuf[wlen] = 0;
+    wprintf(L">>%ls\n", wbuf);
 
     /*
      * Canna オブジェクトは COMPOUND_TEXT エンコーディングしかサポートしない

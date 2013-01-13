@@ -755,13 +755,6 @@ ConversionAttributes *value;
      * display object no longer exist, and if so, that causes BadFont
      * error when changing GCs.
      */
-
-    if (mask & CAFonts) {
-	CDSetFonts(ocw->offthespot.displayobj,
-		   value->fonts, value->num_fonts);
-    } else {
-	CDSetFonts(ocw->offthespot.displayobj, (XFontStruct **)NULL, 0);
-    }
     if (mask & CAColor) {
 	XtVaSetValues(ocw->offthespot.displayobj,
 		      XtNforeground, value->foreground,
@@ -790,8 +783,6 @@ ConversionAttributes *value;
 	redraw = True;
     }
     if (mask & CAFonts) {
-	CDSetFonts(ocw->offthespot.displayobj,
-		   value->fonts, value->num_fonts);
 	redraw = True;
 	ocw->offthespot.lineheight = CDLineHeight(ocw->offthespot.displayobj,
 						  &ocw->offthespot.ascent);
@@ -841,22 +832,12 @@ ConversionAttributes *value;
 				     modearg, j);
 	disp = XtCreateWidget("display", ocw->ccontrol.displayobjclass, mode,
 			      objarg, k);
-	if (mask & CAStatusFonts) {
-	    CDSetFonts(disp, value->status_fonts, value->num_status_fonts);
-	}
 
 	ocw->offthespot.modeshell = shell;
 	ocw->offthespot.modewidget = mode;
 	ocw->offthespot.modedisplayobj = disp;
 	XtInstallAccelerators(mode, (Widget)ocw);
     } else {
-	if (mask & CAStatusFonts) {
-	    CDSetFonts(ocw->offthespot.modedisplayobj,
-		       value->status_fonts, value->num_status_fonts);
-	} else {
-	    CDSetFonts(ocw->offthespot.modedisplayobj,
-		       (XFontStruct **)NULL, 0);
-	}
 	XtSetValues(ocw->offthespot.modeshell, shellarg, i);
 	XtSetValues(ocw->offthespot.modewidget, modearg, j);
 	XtSetValues(ocw->offthespot.modedisplayobj, objarg, k);
@@ -898,8 +879,6 @@ ConversionAttributes *value;
     XtSetValues(ocw->offthespot.modedisplayobj, objarg, k);
 
     if (mask & CAStatusFonts) {
-	CDSetFonts(ocw->offthespot.modedisplayobj,
-		   value->status_fonts, value->num_status_fonts);
 	ICLRecomputeSize(ocw->offthespot.modewidget);
 	redraw = True;
     }

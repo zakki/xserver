@@ -60,7 +60,6 @@ static void DrawString(Widget w, Widget canvas, ICString *str, int start, int en
 static int MaxChar(Widget w, ICString *str, int start, int width);
 static void DrawCursor(Widget w, Widget canvas, int x, int y, int on);
 static void GetCursorBounds(Widget w, XRectangle *bounds);
-static void SetFonts(Widget w, XFontStruct **fonts, Cardinal num_fonts);
 
 ConvDisplayClassRec convDisplayClassRec = {
   { /* object fields */
@@ -104,7 +103,6 @@ ConvDisplayClassRec convDisplayClassRec = {
     /* MaxChar			*/	MaxChar,
     /* DrawCursor		*/	DrawCursor,
     /* GetCursorBounds		*/	GetCursorBounds,
-    /* SetFonts			*/	SetFonts,
   }
 };
 
@@ -143,8 +141,6 @@ ClassPartInitialize(WidgetClass cl)
 	classpart->DrawCursor = superpart->DrawCursor;
     if (classpart->GetCursorBounds == XtInheritGetCursorBounds)
 	classpart->GetCursorBounds = superpart->GetCursorBounds;
-    if (classpart->SetFonts == XtInheritSetFonts)
-	classpart->SetFonts = superpart->SetFonts;
 }
 
 /* ARGSUSED */
@@ -316,15 +312,6 @@ GetCursorBounds(Widget w, XRectangle *bounds)
      bounds->height = obj->convDisplay.cursorbounds.height;
 }
 
-/* ARGSUSED */
-static void
-SetFonts(Widget w, XFontStruct **fonts, Cardinal num_fonts)
-{
-    XtAppError(XtWidgetToApplicationContext(w),
-	       "ConvDisplay Object: SetFonts function isn't defined.");
-}
-
-
 /*
  * public functions
  */
@@ -384,19 +371,6 @@ CDGetCursorBounds(Widget w, XRectangle *bounds)
 }
 
 void
-CDSetFonts(Widget w, XFontStruct **fonts, Cardinal num_fonts) {
-    ConvDisplayObjectClass class = (ConvDisplayObjectClass)w->core.widget_class;
-
-// >> Y.Arai
-TRACE(("CDSetFonts(num_fonts = %d)\n", num_fonts));
-// << Y.Arai
-
-    XtCheckSubclass(w, convDisplayObjectClass, "CDSetFonts()");
-    (*class->convDisplay_class.SetFonts)(w, fonts, num_fonts);
-}
-
-
-void
 CDSetBlockCursor(Widget w, XRectangle *shape)
 {
     ConvDisplayObject obj = (ConvDisplayObject)w;
@@ -421,46 +395,4 @@ CDSetBlockCursor(Widget w, XRectangle *shape)
 		  XtNhotX, -shape->x,
 		  XtNhotY, -shape->y,
 		  NULL);
-}
-
-
-/*
- * semi-public function (for subclass use)
- */
-
-int
-_CDPickupFonts(Widget widget, FontSpec *fontspecs, Cardinal num_specs, XFontStruct **fonts, Cardinal num_fonts)
-{
-    Display *dpy = XtDisplayOfObject(widget);
-    Atom cs_reg = CachedInternAtom(dpy, "CHARSET_REGISTRY", False);
-    Atom cs_enc = CachedInternAtom(dpy, "CHARSET_ENCODING", False);
-    Atom atom;
-    Cardinal i, j;
-    FontSpec *fsp;
-    int npick;
-
-    DPRINT(("_CDPickupFonts(num_fonts=%d, num_specs=%d)\n", num_fonts, num_specs));
-
-    /* pickup fonts */
-    npick = 0;
-    for (i = 0, fsp = fontspecs; i < num_specs; i++, fsp++) {
-	DPRINT(("\tlooking for a font..."));
-
-	fsp->font = NULL;
-	for (j = 0; j < num_fonts; j++) {
-	    if (fonts[j] != NULL &&
-		XGetFontProperty(fonts[j], cs_reg, (unsigned long *)&atom) &&
-		atom == fsp->registry &&
-		XGetFontProperty(fonts[j], cs_enc, (unsigned long *)&atom) &&
-		atom == fsp->encoding) {
-		DPRINT((" found"));
-		fsp->font = fonts[j];
-		npick++;
-		break;
-	    }
-	}
-	DPRINT(("\n"));
-    }
-
-    return npick;
 }

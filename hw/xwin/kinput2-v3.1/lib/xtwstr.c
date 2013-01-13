@@ -31,37 +31,25 @@ static char	*rcsid = "$Id: xtwstr.c,v 2.3 1991/10/02 04:27:04 ishisone Rel $";
 #define IS2B(f)	(((f)->max_byte1 > 0) || ((f)->max_char_or_byte2 > 255))
 
 XWSGC
-XtWSGetGCSet(w, mask, values, fontG0, fontG1, fontG2, fontG3)
-Widget w;
-unsigned long mask;
-XGCValues *values;
-XFontStruct *fontG0;
-XFontStruct *fontG1;
-XFontStruct *fontG2;
-XFontStruct *fontG3;
+XtWSGetGCSet(Widget w, unsigned long mask, XGCValues *values, XFontSet font)
 {
 	XGCValues	gcval;
 	XWSGC		gcset;
 	int		i;
 
 	gcset = (XWSGC)XtMalloc(sizeof(XWSGCSet));
-	gcset->fe[0].font = fontG0;
-	gcset->fe[1].font = fontG1;
-	gcset->fe[2].font = fontG2;
-	gcset->fe[3].font = fontG3;
+	gcset->fe.font = font;
 
 	gcval = *values;
-	mask |= GCFont;
-	for (i = 0; i < 4; i++) {
-		if (gcset->fe[i].font != NULL) {
-			gcval.font = (gcset->fe[i].font)->fid;
-			gcset->fe[i].gc = XtGetGC(w, mask, &gcval);
-			gcset->fe[i].flag = GCCREAT;
-			if (IS2B(gcset->fe[i].font))
-				gcset->fe[i].flag |= TWOB;
-		} else {
-			gcset->fe[i].gc = NULL;
-		}
+	//mask |= GCFont;
+    if (gcset->fe.font != NULL) {
+//		gcval.font = (gcset->fe[i].font)->fid;
+		gcset->fe.gc = XtGetGC(w, mask, &gcval);
+		gcset->fe.flag = GCCREAT;
+//		if (IS2B(gcset->fe[i].font))
+//			gcset->fe[i].flag |= TWOB;
+	} else {
+		gcset->fe.gc = NULL;
 	}
 
 	return gcset;
@@ -71,15 +59,12 @@ void
 XtWSDestroyGCSet(gcset)
 XWSGC gcset;
 {
-	int	i;
 	int	flag;
 
-	for (i = 0; i < 4; i++) {
-		if (gcset->fe[i].gc == NULL)
-			continue;
-		flag = gcset->fe[i].flag;
+        if (gcset->fe.gc != NULL) {
+		flag = gcset->fe.flag;
 		if (flag & GCCREAT)
-			XtDestroyGC(gcset->fe[i].gc);
+			XtDestroyGC(gcset->fe.gc);
 		/* can't free XFontStruct data allocated by XWSSetGCSet()
 		 * because I can't figure out which display is used.
 		 * if (flag & FONTQUERY)
@@ -94,17 +79,14 @@ XtWSReleaseGCSet(w, gcset)
 Widget w;
 XWSGC gcset;
 {
-	int	i;
 	int	flag;
 
-	for (i = 0; i < 4; i++) {
-		if (gcset->fe[i].gc == NULL)
-			continue;
-		flag = gcset->fe[i].flag;
+        if (gcset->fe.gc != NULL) {
+		flag = gcset->fe.flag;
 		if (flag & GCCREAT)
-			XtReleaseGC(w, gcset->fe[i].gc);
+			XtReleaseGC(w, gcset->fe.gc);
 		if (flag & FONTQUERY)
-			XFreeFont(XtDisplay(w), gcset->fe[i].font);
+			XFreeFontSet(XtDisplay(w), gcset->fe.font);
 	}
 	XtFree((char *)gcset);
 }
