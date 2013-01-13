@@ -43,24 +43,24 @@ static XtResource resources[] = {
 #undef offset
 };
 
-static void ClassInitialize();
-static void ClassPartInitialize();
+static void ClassInitialize(void);
+static void ClassPartInitialize(WidgetClass cl);
 
-static void Initialize();
-static void Destroy();
-static Boolean SetValues();
+static void Initialize(Widget req, Widget new, ArgList args, Cardinal *num_args);
+static void Destroy(Widget w);
+static Boolean SetValues(Widget cur, Widget req, Widget wid, ArgList args, Cardinal *num_args);
 
-static Pixmap DefaultCursor();
-static void GetGC();
-static void ComputeBounds();
+static Pixmap DefaultCursor(ConvDisplayObject obj);
+static void GetGC(ConvDisplayObject obj);
+static void ComputeBounds(ConvDisplayObject obj);
 
-static int StringWidth();
-static int LineHeight();
-static void DrawString();
-static int MaxChar();
-static void DrawCursor();
-static void GetCursorBounds();
-static void SetFonts();
+static int StringWidth(Widget w, ICString *str, int start, int end);
+static int LineHeight(Widget w, Position *ascentp);
+static void DrawString(Widget w, Widget canvas, ICString *str, int start, int end, int x, int y);
+static int MaxChar(Widget w, ICString *str, int start, int width);
+static void DrawCursor(Widget w, Widget canvas, int x, int y, int on);
+static void GetCursorBounds(Widget w, XRectangle *bounds);
+static void SetFonts(Widget w, XFontStruct **fonts, Cardinal num_fonts);
 
 ConvDisplayClassRec convDisplayClassRec = {
   { /* object fields */
@@ -111,7 +111,7 @@ ConvDisplayClassRec convDisplayClassRec = {
 WidgetClass convDisplayObjectClass = (WidgetClass)&convDisplayClassRec;
 
 static void
-ClassInitialize()
+ClassInitialize(void)
 {
     static XtConvertArgRec screenConvertArg[] = {
         { XtBaseOffset, (caddr_t) XtOffset(Widget, core.screen),
@@ -124,8 +124,7 @@ ClassInitialize()
 }
 
 static void
-ClassPartInitialize(cl)
-WidgetClass cl;
+ClassPartInitialize(WidgetClass cl)
 {
     ConvDisplayObjectClass class = (ConvDisplayObjectClass)cl;
     ConvDisplayObjectClass super = (ConvDisplayObjectClass)class->object_class.superclass;
@@ -150,11 +149,7 @@ WidgetClass cl;
 
 /* ARGSUSED */
 static void
-Initialize(req, new, args, num_args)
-Widget req;
-Widget new;
-ArgList args;
-Cardinal *num_args;
+Initialize(Widget req, Widget new, ArgList args, Cardinal *num_args)
 {
     ConvDisplayObject obj = (ConvDisplayObject)new;
 
@@ -170,8 +165,7 @@ Cardinal *num_args;
 }
 
 static void
-Destroy(w)
-Widget w;
+Destroy(Widget w)
 {
     ConvDisplayObject obj = (ConvDisplayObject)w;
 
@@ -183,12 +177,7 @@ Widget w;
 
 /* ARGSUSED */
 static Boolean
-SetValues(cur, req, wid, args, num_args)
-Widget cur;
-Widget req;
-Widget wid;
-ArgList args;
-Cardinal *num_args;
+SetValues(Widget cur, Widget req, Widget wid, ArgList args, Cardinal *num_args)
 {
     ConvDisplayObject new = (ConvDisplayObject)wid;
     ConvDisplayObject old = (ConvDisplayObject)cur;
@@ -214,8 +203,7 @@ Cardinal *num_args;
 }
 
 static Pixmap
-DefaultCursor(obj)
-ConvDisplayObject obj;
+DefaultCursor(ConvDisplayObject obj)
 {
     static char default_bits[] = { 0x0c, 0x0c, 0x1e, 0x3f, 0x33 };
     return XCreateBitmapFromData(XtDisplayOfObject((Widget)obj),
@@ -225,8 +213,7 @@ ConvDisplayObject obj;
 }
 
 static void
-GetGC(obj)
-ConvDisplayObject obj;
+GetGC(ConvDisplayObject obj)
 {
     XtGCMask mask = GCFunction|GCForeground|GCBackground;
     XGCValues values;
@@ -238,8 +225,7 @@ ConvDisplayObject obj;
 }
 
 static void
-ComputeBounds(obj)
-ConvDisplayObject obj;
+ComputeBounds(ConvDisplayObject obj)
 {
     unsigned int width, height;
     Window junkroot;
@@ -261,11 +247,7 @@ ConvDisplayObject obj;
 
 /* ARGSUSED */
 static int
-StringWidth(w, str, start, end)
-Widget w;
-ICString *str;
-int start;
-int end;
+StringWidth(Widget w, ICString *str, int start, int end)
 {
     XtAppError(XtWidgetToApplicationContext(w),
 	       "ConvDisplay Object: StringWidth function isn't defined.");
@@ -274,9 +256,7 @@ int end;
 
 /* ARGSUSED */
 static int
-LineHeight(w, ascentp)
-Widget w;
-Position *ascentp;
+LineHeight(Widget w, Position *ascentp)
 {
     XtAppError(XtWidgetToApplicationContext(w),
 	       "ConvDisplay Object: LineHeight function isn't defined.");
@@ -285,14 +265,7 @@ Position *ascentp;
 
 /* ARGSUSED */
 static void
-DrawString(w, canvas, str, start, end, x, y)
-Widget w;
-Widget canvas;
-ICString *str;
-int start;
-int end;
-int x;
-int y;
+DrawString(Widget w, Widget canvas, ICString *str, int start, int end, int x, int y)
 {
     XtAppError(XtWidgetToApplicationContext(w),
 	       "ConvDisplay Object: DrawString function isn't defined.");
@@ -300,11 +273,7 @@ int y;
 
 /* ARGSUSED */
 static int
-MaxChar(w, str, start, width)
-Widget w;
-ICString *str;
-int start;
-int width;
+MaxChar(Widget w, ICString *str, int start, int width)
 {
     XtAppError(XtWidgetToApplicationContext(w),
 	       "ConvDisplay Object: MaxChar function isn't defined.");
@@ -312,12 +281,7 @@ int width;
 }
 
 static void
-DrawCursor(w, canvas, x, y, on)
-Widget w;
-Widget canvas;
-int x;
-int y;
-int on;
+DrawCursor(Widget w, Widget canvas, int x, int y, int on)
 {
     ConvDisplayObject obj = (ConvDisplayObject)w;
 
@@ -342,9 +306,7 @@ int on;
 }
 
 static void
-GetCursorBounds(w, bounds)
-Widget w;
-XRectangle *bounds;
+GetCursorBounds(Widget w, XRectangle *bounds)
 {
     ConvDisplayObject obj = (ConvDisplayObject)w;
 
@@ -356,10 +318,7 @@ XRectangle *bounds;
 
 /* ARGSUSED */
 static void
-SetFonts(w, fonts, num_fonts)
-Widget w;
-XFontStruct **fonts;
-Cardinal num_fonts;
+SetFonts(Widget w, XFontStruct **fonts, Cardinal num_fonts)
 {
     XtAppError(XtWidgetToApplicationContext(w),
 	       "ConvDisplay Object: SetFonts function isn't defined.");
@@ -371,11 +330,7 @@ Cardinal num_fonts;
  */
 
 int
-CDStringWidth(w, str, start, end)
-Widget w;
-ICString *str;
-int start;
-int end;
+CDStringWidth(Widget w, ICString *str, int start, int end)
 {
     ConvDisplayObjectClass class = (ConvDisplayObjectClass)w->core.widget_class;
 
@@ -384,9 +339,7 @@ int end;
 }
 
 int
-CDLineHeight(w, ascent)
-Widget w;
-Position *ascent;
+CDLineHeight(Widget w, Position *ascent)
 {
     ConvDisplayObjectClass class = (ConvDisplayObjectClass)w->core.widget_class;
 
@@ -395,14 +348,7 @@ Position *ascent;
 }
 
 void
-CDDrawString(w, canvas, str, start, end, x, y)
-Widget w;
-Widget canvas;
-ICString *str;
-int start;
-int end;
-int x;
-int y;
+CDDrawString(Widget w, Widget canvas, ICString *str, int start, int end, int x, int y)
 {
     ConvDisplayObjectClass class = (ConvDisplayObjectClass)w->core.widget_class;
 
@@ -411,11 +357,7 @@ int y;
 }
 
 int
-CDMaxChar(w, str, start, width)
-Widget w;
-ICString *str;
-int start;
-int width;
+CDMaxChar(Widget w, ICString *str, int start, int width)
 {
     ConvDisplayObjectClass class = (ConvDisplayObjectClass)w->core.widget_class;
 
@@ -424,12 +366,7 @@ int width;
 }
 
 void
-CDDrawCursor(w, canvas, x, y, on)
-Widget w;
-Widget canvas;
-int x;
-int y;
-int on;
+CDDrawCursor(Widget w, Widget canvas, int x, int y, int on)
 {
     ConvDisplayObjectClass class = (ConvDisplayObjectClass)w->core.widget_class;
 
@@ -438,9 +375,7 @@ int on;
 }
 
 void
-CDGetCursorBounds(w, bounds)
-Widget w;
-XRectangle *bounds;
+CDGetCursorBounds(Widget w, XRectangle *bounds)
 {
     ConvDisplayObjectClass class = (ConvDisplayObjectClass)w->core.widget_class;
 
@@ -449,11 +384,7 @@ XRectangle *bounds;
 }
 
 void
-CDSetFonts(w, fonts, num_fonts)
-Widget w;
-XFontStruct **fonts;
-Cardinal num_fonts;
-{
+CDSetFonts(Widget w, XFontStruct **fonts, Cardinal num_fonts) {
     ConvDisplayObjectClass class = (ConvDisplayObjectClass)w->core.widget_class;
 
 // >> Y.Arai
@@ -466,9 +397,7 @@ TRACE(("CDSetFonts(num_fonts = %d)\n", num_fonts));
 
 
 void
-CDSetBlockCursor(w, shape)
-Widget w;
-XRectangle *shape;
+CDSetBlockCursor(Widget w, XRectangle *shape)
 {
     ConvDisplayObject obj = (ConvDisplayObject)w;
     Display *dpy = XtDisplayOfObject((Widget)obj);
@@ -500,12 +429,7 @@ XRectangle *shape;
  */
 
 int
-_CDPickupFonts(widget, fontspecs, num_specs, fonts, num_fonts)
-Widget widget;
-FontSpec *fontspecs;
-Cardinal num_specs;
-XFontStruct **fonts;
-Cardinal num_fonts;
+_CDPickupFonts(Widget widget, FontSpec *fontspecs, Cardinal num_specs, XFontStruct **fonts, Cardinal num_fonts)
 {
     Display *dpy = XtDisplayOfObject(widget);
     Atom cs_reg = CachedInternAtom(dpy, "CHARSET_REGISTRY", False);

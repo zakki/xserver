@@ -23,13 +23,13 @@
 #include "ConvDisp.h"
 
 typedef struct {
-    int		(*StringWidth)();
-    int		(*LineHeight)();
-    void	(*DrawString)();
-    int		(*MaxChar)();
-    void	(*DrawCursor)();
-    void	(*GetCursorBounds)();
-    void	(*SetFonts)();
+    int		(*StringWidth)(Widget, ICString*, int, int);
+    int		(*LineHeight)(Widget, Position*);
+    void	(*DrawString)(Widget, Widget, ICString*, int, int, int, int);
+    int		(*MaxChar)(Widget, ICString*, int, int);
+    void	(*DrawCursor)(Widget, Widget, int, int, int);
+    void	(*GetCursorBounds)(Widget,XRectangle*);
+    void	(*SetFonts)(Widget, XFontStruct**, Cardinal);
 } ConvDisplayClassPart;
 
 typedef struct _ConvDisplayClassRec {

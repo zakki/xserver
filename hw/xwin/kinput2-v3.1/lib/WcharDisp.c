@@ -68,26 +68,26 @@ static WDCharSet defCharSet[] = {
 #endif
 };
 
-static void ClassInitialize();
-static void StringToFontMapping();
+static void ClassInitialize(void);
+static void StringToFontMapping(XrmValue *args, Cardinal *num_args, XrmValue *from, XrmValue *to);
 
-static void Initialize();
-static void Destroy();
-static Boolean SetValues();
+static void Initialize(Widget req, Widget new, ArgList args, Cardinal *num_args);
+static void Destroy(Widget w);
+static Boolean SetValues(Widget cur, Widget req, Widget wid, ArgList args, Cardinal *num_args);
 
-static void GetAtoms();
-static void GetGC();
-static void ChangeFont();
+static void GetAtoms(WcharDisplayObject obj);
+static void GetGC(WcharDisplayObject obj);
+static void ChangeFont(WcharDisplayObject obj, XFontStruct **fonts, Boolean *mapping);
 
-static int StringWidth();
-static int LineHeight();
-static void DrawString();
-static int MaxChar();
-static void SetFonts();
+static int StringWidth(Widget w, ICString *seg, int start, int end);
+static int LineHeight(Widget w, Position *ascentp);
+static void DrawString(Widget w, Widget canvas, ICString *seg, int start, int end, int x, int y);
+static int MaxChar(Widget w, ICString *seg, int start, int width);
+static void SetFonts(Widget w, XFontStruct  **fonts, Cardinal num_fonts);
 
-static int countControlChars();
-static void expandControlChars();
-static int charWidth();
+static int countControlChars(const wchar *wstr, int len);
+static void expandControlChars(const wchar *org, int orglen, wchar *res);
+static int charWidth(int c, XWSGC gcset);
 
 WcharDisplayClassRec wcharDisplayClassRec = {
   { /* object fields */
@@ -143,7 +143,7 @@ WidgetClass wcharDisplayObjectClass = (WidgetClass)&wcharDisplayClassRec;
 
 /* ARGSUSED */
 static void
-ClassInitialize()
+ClassInitialize(void)
 {
     /* add String -> FontMapping converter */
     XtAddConverter(XtRString, XtRFontMapping, StringToFontMapping,
@@ -152,11 +152,7 @@ ClassInitialize()
 
 /* ARGSUSED */
 static void
-StringToFontMapping(args, num_args, from, to)
-XrmValue *args;
-Cardinal *num_args;
-XrmValue *from;
-XrmValue *to;
+StringToFontMapping(XrmValue *args, Cardinal *num_args, XrmValue *from, XrmValue *to)
 {
     char *s = (char *)from->addr;
     char buf[128];
@@ -195,11 +191,7 @@ XrmValue *to;
 
 /* ARGSUSED */
 static void
-Initialize(req, new, args, num_args)
-Widget req;
-Widget new;
-ArgList args;
-Cardinal *num_args;
+Initialize(Widget req, Widget new, ArgList args, Cardinal *num_args)
 {
     WcharDisplayObjectClass class = (WcharDisplayObjectClass)XtClass(new);
     WcharDisplayObject obj = (WcharDisplayObject)new;
@@ -230,8 +222,7 @@ Cardinal *num_args;
 }
 
 static void
-Destroy(w)
-Widget w;
+Destroy(Widget w)
 {
     WcharDisplayObject obj = (WcharDisplayObject)w;
 
@@ -243,12 +234,7 @@ Widget w;
 
 /* ARGSUSED */
 static Boolean
-SetValues(cur, req, wid, args, num_args)
-Widget cur;
-Widget req;
-Widget wid;
-ArgList args;
-Cardinal *num_args;
+SetValues(Widget cur, Widget req, Widget wid, ArgList args, Cardinal *num_args)
 {
     WcharDisplayObject old = (WcharDisplayObject)cur;
     WcharDisplayObject new = (WcharDisplayObject)wid;
@@ -279,8 +265,7 @@ Cardinal *num_args;
 }
 
 static void
-GetAtoms(obj)
-WcharDisplayObject obj;
+GetAtoms(WcharDisplayObject obj)
 {
     Display *dpy = XtDisplayOfObject((Widget)obj);
     WDCharSet *csp;
@@ -324,8 +309,7 @@ WcharDisplayObject obj;
 }
 
 static void
-GetGC(obj)
-WcharDisplayObject obj;
+GetGC(WcharDisplayObject obj)
 {
     XtGCMask mask = GCFont|GCForeground|GCBackground;
     XGCValues values;
@@ -373,10 +357,7 @@ WcharDisplayObject obj;
 }
 
 static void
-ChangeFont(obj, fonts, mapping)
-WcharDisplayObject obj;
-XFontStruct **fonts;
-Boolean *mapping;
+ChangeFont(WcharDisplayObject obj, XFontStruct **fonts, Boolean *mapping)
 {
     Boolean newgc = False;
     int i;
@@ -397,11 +378,7 @@ Boolean *mapping;
 }
 
 static int
-StringWidth(w, seg, start, end)
-Widget w;
-ICString *seg;
-int start;
-int end;
+StringWidth(Widget w, ICString *seg, int start, int end)
 {
     WcharDisplayObject obj = (WcharDisplayObject)w;
     wchar *wstr;
@@ -433,9 +410,7 @@ int end;
 }
 
 static int
-LineHeight(w, ascentp)
-Widget w;
-Position *ascentp;
+LineHeight(Widget w, Position *ascentp)
 {
     WcharDisplayObject obj = (WcharDisplayObject)w;
 
@@ -444,14 +419,8 @@ Position *ascentp;
 }
 
 static void
-DrawString(w, canvas, seg, start, end, x, y)
-Widget w;
-Widget canvas;
-ICString *seg;
-int start;
-int end;
-int x;
-int y;
+DrawString(Widget w, Widget canvas, ICString *seg, int start, int end,
+           int x, int y)
 {
     WcharDisplayObject obj = (WcharDisplayObject)w;
     wchar *wstr;
@@ -524,11 +493,7 @@ int y;
 }
 
 static int
-MaxChar(w, seg, start, width)
-Widget w;
-ICString *seg;
-int start;
-int width;
+MaxChar(Widget w, ICString *seg, int start, int width)
 {
     WcharDisplayObject obj = (WcharDisplayObject)w;
     XWSGC gcset = obj->wcharDisplay.gcset_normal;
@@ -548,10 +513,7 @@ int width;
 }
 
 static void
-SetFonts(w, fonts, num_fonts)
-Widget w;
-XFontStruct  **fonts;
-Cardinal num_fonts;
+SetFonts(Widget w, XFontStruct  **fonts, Cardinal num_fonts)
 {
     WcharDisplayObject obj = (WcharDisplayObject)w;
     WDCharSet *csp = obj->wcharDisplay.charset_specs;
@@ -604,9 +566,7 @@ TRACE(("SetFonts(num_fonts = %d)\n", num_fonts));
 
 /* countControlChars -- count number of control characters in a string */
 static int
-countControlChars(wstr, len)
-register wchar *wstr;
-int len;
+countControlChars(const wchar *wstr, int len)
 {
     register wchar *end = wstr + len;
     register int n = 0;
@@ -620,10 +580,7 @@ int len;
 
 /* expandControlChars -- convert control characters into '^?' format */
 static void
-expandControlChars(org, orglen, res)
-wchar *org;
-int orglen;
-wchar *res;
+expandControlChars(const wchar *org, int orglen, wchar *res)
 {
     wchar *end;
 
@@ -656,8 +613,7 @@ wchar *res;
     ((csp)->width != 0 || ((csp)->rbearing != 0) || ((csp)->lbearing != 0))
 
 static int
-defaultCharWidth(font)
-XFontStruct *font;
+defaultCharWidth(XFontStruct *font)
 {
     int defchar = font->default_char;
 
@@ -690,9 +646,7 @@ XFontStruct *font;
 
 /* charWidth -- returns width of the specified character */
 static int
-charWidth(c, gcset)
-register int c;
-XWSGC gcset;
+charWidth(int c, XWSGC gcset)
 {
     register XFontStruct *font;
     int width;
