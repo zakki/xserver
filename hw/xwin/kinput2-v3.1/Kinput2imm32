@@ -73,11 +73,6 @@ Kinput2imm32.height: 1
 !!
 !! conversion protocol dependent resources
 !!
-! KinputProtocol
-*KinputProtocol.BackwardCompatible: true
-!*KinputProtocol.XlcConversionStartKey:	Shift<Key>space
-! XimpProtocol
-*XimpProtocol.ForceDefaultServer: true
 ! X Input Method Protocol
 *IMProtocol.locales: ja_JP.SJIS, ja_JP.EUC, ja_JP.UTF-8, ja_JP, japanese, japan, ja, en_US.UTF-8
 ! common to XimpProtocol and IMProtocol

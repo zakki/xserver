@@ -37,8 +37,6 @@ static char	*rcsid = "$Id: kinput2.c,v 1.46 2002/01/06 15:13:38 ishisone Exp $";
 #include "MyDispatch.h"
 #include "IOECall.h"
 #include "ConvMgr.h"
-#include "KIProto.h"
-#include "XimpProto.h"
 #include "IMProto.h"
 
 #ifdef USE_WINIME
@@ -464,6 +462,8 @@ return 1;
 
     if (appres.useXimpProtocol)
     {
+        abort();
+/*
 	TRACE(("internalKinput2: Use Ximp.\n"));
 	protocol = XtVaCreateWidget("ximpprotocol",
 				    ximpProtocolWidgetClass,
@@ -477,6 +477,7 @@ return 1;
 	XtAddCallback(protocol, XtNdestroyCallback,
 		      Destroyed, (XtPointer)NULL);
 	numProtocols++;
+*/
     }
 
     if (appres.useXIMProtocol)
@@ -813,6 +814,8 @@ char **av;
     numProtocols = 0;
 
     if (appres.useXimpProtocol) {
+        abort();
+/*
 	protocol = XtVaCreateWidget("ximpprotocol",
 				    ximpProtocolWidgetClass,
 				    manager,
@@ -825,6 +828,7 @@ char **av;
 	XtAddCallback(protocol, XtNdestroyCallback,
 		      Destroyed, (XtPointer)NULL);
 	numProtocols++;
+*/
     }
 
     if (appres.useXIMProtocol) {

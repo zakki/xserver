@@ -116,7 +116,6 @@ SRCS_WINIME = \
 	kinput2-v3.1/lib/WcharDisp.c \
 	kinput2-v3.1/lib/WinIMM32.c \
 	kinput2-v3.1/lib/wstring.c \
-	kinput2-v3.1/lib/XimpProto.c \
 	kinput2-v3.1/lib/xtwstr.c \
 	kinput2-v3.1/lib/xwstr.c
 DEFS_WINIME = -DXWIN_WINIME -DUSE_WINIME -DFOR_ACS
