@@ -41,26 +41,6 @@ static char	*rcsid = "$Id: kinput2.c,v 1.46 2002/01/06 15:13:38 ishisone Exp $";
 #include "XimpProto.h"
 #include "IMProto.h"
 
-#if !defined(USE_WNN) && !defined(USE_CANNA) && !defined(USE_SJ3) && !defined(USE_ATOK) && !defined(USE_WINIME)
-#define USE_WNN			/* default */
-#endif
-
-#ifdef USE_WNN
-#include "CcWnn.h"
-#include "WcharDisp.h"
-#endif
-#ifdef USE_CANNA
-#include "Canna.h"
-#include "WcharDisp.h"
-#endif
-#ifdef USE_SJ3
-#include "Sj3.h"
-#include "WcharDisp.h"
-#endif
-#ifdef USE_ATOK
-#include "Atok.h"
-#include "WcharDisp.h"
-#endif
 #ifdef USE_WINIME
 //#include "WinIMMDefs.h"
 #include "WinIMM32.h"
@@ -145,45 +125,6 @@ static XrmOptionDescRec	options[] = {
     {"-debug",		".debugLevel",		XrmoptionNoArg,		"1"},
     {"-trace",		".debugLevel",		XrmoptionNoArg,		"10"},
     {"-debuglevel",	".debugLevel",		XrmoptionSepArg,	NULL},
-#endif
-#ifdef USE_WNN
-    {"-wnn",		".conversionEngine",	XrmoptionNoArg,		"wnn"},
-    {"-jserver",	"*CcWnn.jserver",	XrmoptionSepArg,	NULL},
-    {"-ccdef",		"*CcWnn.ccdef",		XrmoptionSepArg,	NULL},
-    {"-wnnenvname",	"*CcWnn.wnnEnvname",	XrmoptionSepArg,	NULL},
-    {"-wnnenvrc4",	"*CcWnn.wnnEnvrc4",	XrmoptionSepArg,	NULL},
-    {"-wnnenvrc6",	"*CcWnn.wnnEnvrc6",	XrmoptionSepArg,	NULL},
-    {"-wnnenvrc",	"*CcWnn.wnnEnvrc",	XrmoptionSepArg,	NULL},
-#endif
-#ifdef USE_CANNA
-    {"-canna",		".conversionEngine",	XrmoptionNoArg,		"canna"},
-    {"-cannaserver",	"*Canna.cannahost",	XrmoptionSepArg,	NULL},
-    {"-cs",		"*Canna.cannahost",	XrmoptionSepArg,	NULL},
-    {"-cannafile",	"*Canna.cannafile",	XrmoptionSepArg,	NULL},
-#endif
-#ifdef USE_SJ3
-    {"-sj3",        ".conversionEngine",    XrmoptionNoArg,     "sj3"},
-    {"-sj3serv",    "*Sj3.sj3serv",     XrmoptionSepArg,    NULL},
-    {"-sj3serv2",   "*Sj3.sj3serv2",    XrmoptionSepArg,    NULL},
-    {"-sj3user",    "*Sj3.sj3user",     XrmoptionSepArg,    NULL},
-    {"-rcfile",     "*Sj3.rcfile",      XrmoptionSepArg,    NULL},
-    {"-sbfile",     "*Sj3.sbfile",      XrmoptionSepArg,    NULL},
-    {"-rkfile",     "*Sj3.rkfile",      XrmoptionSepArg,    NULL},
-    {"-hkfile",     "*Sj3.hkfile",  XrmoptionSepArg,    NULL},
-    {"-zhfile",     "*Sj3.zhfile",  XrmoptionSepArg,    NULL},
-    {"-sjrc",       "*Sj3.rcfile",      XrmoptionSepArg,    NULL},
-    {"-sjsb",       "*Sj3.sbfile",      XrmoptionSepArg,    NULL},
-    {"-sjrk",       "*Sj3.rkfile",      XrmoptionSepArg,    NULL},
-    {"-sjhk",       "*Sj3.hkfile",      XrmoptionSepArg,    NULL},
-    {"-sjzh",       "*Sj3.zhfile",      XrmoptionSepArg,    NULL},
-#endif
-#ifdef USE_ATOK
-    {"-atok",        ".conversionEngine",   XrmoptionNoArg,     "atok"},
-    {"-atokserver",  "*Atok.server",    XrmoptionSepArg,    NULL},
-    {"-as",          "*Atok.server",    XrmoptionSepArg,    NULL},
-    {"-atokport",    "*Atok.port",      XrmoptionSepArg,    NULL},
-    {"-atokconf",    "*Atok.conf",      XrmoptionSepArg,    NULL},
-    {"-atokstyle",   "*Atok.style",     XrmoptionSepArg,    NULL},
 #endif
 #ifdef USE_WINIME
 #endif
@@ -912,9 +853,6 @@ char **av;
     interrupt = XtAppAddSignal(apc, interruptCallback, (XtPointer)NULL);
 #endif
     signal(SIGTERM, scheduleExit);
-#ifdef USE_WNN
-    signal(SIGPIPE, SIG_IGN);
-#endif
 
     /* set my error handler */
     DefaultErrorHandler = XAESetErrorHandler(IgnoreBadWindow);
@@ -941,27 +879,6 @@ getInputObjClass()
 {
     WidgetClass class;
 
-#ifdef USE_WNN
-    if (!strcmp(appres.conversionEngine, "wnn")) {
-	return ccWnnObjectClass;
-    }
-#endif
-#ifdef USE_CANNA
-    if (!strcmp(appres.conversionEngine, "canna") ||
-	!strcmp(appres.conversionEngine, "iroha")) {
-	return cannaObjectClass;
-    }
-#endif
-#ifdef USE_SJ3
-    if (!strcmp(appres.conversionEngine, "sj3")) {
-	return sj3ObjectClass;
-    }
-#endif
-#ifdef USE_ATOK
-    if (!strcmp(appres.conversionEngine, "atok")) {
-	return atokObjectClass;
-    }
-#endif
 #ifdef USE_WINIME
     if (!strcmp(appres.conversionEngine, "winimm32")) {
 	return winimm32ObjectClass;
@@ -969,18 +886,6 @@ getInputObjClass()
 #endif
 
     /* set default input object */
-#ifdef USE_ATOK
-    class = atokObjectClass;
-#endif
-#ifdef USE_SJ3
-    class = sj3ObjectClass;
-#endif
-#ifdef USE_CANNA
-    class = cannaObjectClass;
-#endif
-#ifdef USE_WNN
-    class = ccWnnObjectClass;
-#endif
 #ifdef USE_WINIME
     class = winimm32ObjectClass;
 #endif
@@ -1119,38 +1024,6 @@ usage()
 {
     char **p;
     static char *syntaxtable[] = {
-#ifdef USE_WNN
-	"-wnn",			"use Wnn as the conversion engine",
-	"-jserver <hostname>",	"specify jserver host",
-	"-ccdef <ccdeffile>",	"specify character conversion def. file",
-	"-wnnenvname <name>",	"specify Wnn environment name",
-	"-wnnenvrc4 <wnnenvrcfile>", "specify Wnn environment file for Wnn4",
-	"-wnnenvrc6 <wnnenvrcfile>", "specify Wnn environment file for Wnn6",
-	"-wnnenvrc <wnnenvrcfile>", "specify Wnn environment file",
-#endif
-#ifdef USE_CANNA
-	"-canna",		"use Canna (Iroha) as the conversion engine",
-	"{-cannaserver|-cs} <hostname>[:n]", "specify cannaserver host",
-	"-cannafile <cannafile>", "specify canna customize file",
-#endif
-#ifdef USE_SJ3
-	"-sj3",         	"use SJ3 as the conversion engine",
-	"-sj3serv <hostname>",  "specify first sj3serv host",
-	"-sj3serv2 <hostname>", "specify second sj3serv host",
-	"-sj3user <user>",      "specify user name connect to sj3serv",
-	"{-rcfile|-sjrc} <file>",       "specify resource definition file",
-	"{-sbfile|-sjsb} <file>",       "specify symbol table file",
-	"{-rkfile|-sjrk} <file>",       "specify roma-kana coversion definition file",
-	"{-hkfile|-sjhk} <file>",       "specify hira-kata coversion definition file",
-	"{-zhfile|-sjzh} <file>",       "specify zen/han coversion definition file",
-#endif
-#ifdef USE_ATOK
-	"-atok",                        "use ATOK as the conversion engine",
-	"{-atokserver|-as} <hostname>", "specify atok server host",
-	"-atokport <port#>",            "specify atok service port",
-	"-atokconf <file>",             "specify atok customize file",
-	"-atokstyle <file>",            "specify atok style file",
-#endif
 #ifdef USE_WINIME
 #endif
 	"-bc",			"backward compatible mode",
@@ -1200,22 +1073,6 @@ print_version()
     printf(")\n");
 
     printf("\toptions: ");
-#ifdef USE_WNN
-#ifdef USE_WNN6
-    printf("[Wnn6] ");
-#else
-    printf("[Wnn] ");
-#endif
-#endif
-#ifdef USE_CANNA
-    printf("[Canna2] ");
-#endif
-#ifdef USE_SJ3
-    printf("[Sj3] ");
-#endif
-#ifdef USE_ATOK
-    printf("[Atok] ");
-#endif
 #ifdef USE_WINIME
     printf("[WinIMM32] ");
 #endif
@@ -1226,18 +1083,3 @@ print_version()
     exit(0);
 }
 #endif	// #ifndef USE_WINIME
-
-#if defined(USE_WNN) && defined(NEED_Strlen)
-/*
- * Wnn/jlib/js.c should have this function...
- */
-int
-Strlen(s)
-unsigned short *s;
-{
-    int n = 0;
-
-    while (*s++) n++;
-    return n;
-}
-#endif
