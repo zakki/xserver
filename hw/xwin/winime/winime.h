@@ -144,13 +144,13 @@ Bool XWinIMESetCompositionWindow (Display *dpy, int context,
 int XWinIMEGetCompositionString (Display *dpy, int context,
 				  int index,
 				  int count,
-				  wchar* str_return);
+				  uint16_t *str_return);
 Bool XWinIMESetCompositionDraw (Display *dpy, int context, Bool draw);
 Bool XWinIMEGetCursorPosition (Display* dpy, int context, int *cursor, int *numClause, int *curClause, int *offset);	// Change Y.Arai
 Bool XWinIMEGetConversionStatus (Display *dpy, int context, Bool* fopen, DWORD* conversion, DWORD* sentence, Bool* fmodify);
 Bool XWinIMEGetOpenStatus (Display *dpy, int context, Bool* fopen);
-int XWinIMEGetTargetClause (Display *dpy, int context, int target, wchar *data, int *attr);
-int XWinIMEGetTargetString (Display *dpy, int context, int target, int offset, wchar *data);
+int XWinIMEGetTargetClause (Display *dpy, int context, int target, uint16_t *data, int *attr);
+int XWinIMEGetTargetString (Display *dpy, int context, int target, int offset, uint16_t *data);
 Bool XWinIMESetCandidateWindow (Display *dpy, int context, int x, int y, int listnum);
 Bool XWinIMEStartIME (Display *dpy, int context);
 

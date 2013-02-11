@@ -51,7 +51,7 @@
 #include <imm.h>
 #undef XFree86Server
 
-typedef unsigned short	wchar;
+//typedef uint32_t wchar;
 
 #include "winimestr.h"
 #include <X11/extensions/Xext.h>
@@ -183,77 +183,10 @@ event_to_wire (Display *dpy, XEvent  *re, xEvent  *event)
     return 0;
 }
 
-// Xatoklibから借用
-/*
- * [関数名]
- *      euc2wcs( )
- * [表題]
- *              EUC文字列から wchar 型文字列への変換
- * [呼出形式]
- *      int euc2wcs( unsigned char *euc, int elen, wchar *wbuf )
- *
- * [引数]
- *              型            : 名  称  : I O : 説      明
- *      unsigned char : *euc   : i   : EUC 文字列
- *      int           : elen   : i   : EUC 文字列の長さ
- *      wchar         : *wbuf  :   o : wchar 型文字列格納領域
- *
- * [返り値]
- *      1 : 常に１
- *
- * [使用関数]
- *      なし
- * [機能]
- *      unsigined char 型のEUC 文字列をwchar 型に変換する。
- *      EUC 文字列には、0x8f の特別なコードが含まれているので
- *      wchar に変換する時に個別処理をする。
- */
-static int euc2wcs(unsigned char *euc, int elen, wchar *wbuf)
-{
-    int lb = 0, hb = 0 ;
-    int i ;
-    int n = 0 ;
-    int isSkip ;
-
-    for( i = 0 ; i < elen ; i++ ) {
-        isSkip = 0 ;
-        if (  *euc == 0x8e ) {
-            euc++ ;
-            hb = *euc ;
-            lb = 0 ;
-            i++ ;
-        }
-        else if (  *euc & 0x80 ) {
-            if ( *euc == 0x8f ) {
-                isSkip=1 ;
-            }
-            else {
-                lb = *euc ;
-                euc++ ;
-                hb = *euc ;
-                i++ ;
-            }
-        }
-        else {
-            hb = *euc ;
-            lb = 0 ;
-        }
-        euc++ ;
-        if ( !isSkip ) {
-            *wbuf = (( lb << 8 ) | hb ) & 0xffff ;
-            wbuf++ ;
-            n++ ;
-        }
-    }
-
-    *wbuf = 0 ;
-    return n ;
-}
-
 static int
 _Local_wcstombs(
     iconv_t cd,
-    const wchar *str,
+    const char *str,
     int flen,
     char *ustr,
     int len)
@@ -299,42 +232,33 @@ _Local_wcstombs(
 }
 
 #define SELECTBUFSIZE 1024
-// 一回EUCに変換してからWideCharに変換するバージョン
-static int UCS2toWideChar(int nSize, const char *pszUnicodeStr, wchar* pDest)
+static int UCS2toWideChar(int nSize, const char *pszUnicodeStr, uint16_t* pDest)
 {
-    static wchar wszWideChar[SELECTBUFSIZE];
-    static char szString[SELECTBUFSIZE];
-    const wchar *pwszUnicodeStr = (const wchar*)pszUnicodeStr;
     iconv_t cd = (iconv_t)-1;
     int nLen = -1;  // 文字数
 
     MyErrorF("WinIME:UCS2toWideChar(%d Bytes)\n", nSize);
 
     // コード変換コンバータの準備
-    cd = iconv_open("EUC-JP", "UCS-2-INTERNAL");
+    cd = iconv_open("UCS-2-INTERNAL", "UCS-2-INTERNAL");
     if (cd == (iconv_t)-1) {
         TRACE("  No Converter\n");
         return nLen;
     }
 
-    nLen = _Local_wcstombs(cd, pwszUnicodeStr, nSize, szString, SELECTBUFSIZE);
+    nLen = _Local_wcstombs(cd, pszUnicodeStr, nSize, pDest, SELECTBUFSIZE);
     iconv_close(cd);
-
-    nLen = euc2wcs(szString, nLen, wszWideChar);
 
     if (nLen == -1) {
         TRACE("  Convert Error\n");
         return nLen;
     } else {
         TRACE("  Save data\n");
-
-
-        memcpy((XPointer)pDest, (XPointer)wszWideChar, nLen * sizeof(wchar));
         {
             int i;
             MyErrorF("    WideChar: ");
             for (i=0; i<nLen; i++) {
-                MyErrorF("0x%X ", wszWideChar[i]);
+                MyErrorF("0x%X ", pDest[i]);
             }
             MyErrorF("\n");
         }
@@ -554,7 +478,7 @@ int
 XWinIMEGetCompositionString (Display *dpy, int context,
                              int index,
                              int count,
-                             wchar* str_return)
+                             uint16_t* str_return)
 {
     XExtDisplayInfo *info = find_display (dpy);
     xWinIMEGetCompositionStringReq *req;
@@ -587,18 +511,12 @@ XWinIMEGetCompositionString (Display *dpy, int context,
         return -1;
     }
 
-    if ((str = (char *) malloc(rep.strLength))) {
-        _XReadPad(dpy, (XPointer)str, (long)rep.strLength);
+    if (str_return) {
+        _XReadPad(dpy, (XPointer)str_return, (long)rep.strLength);
+        nLen = rep.strLength / 2;
     } else {
-        _XEatData(dpy, (unsigned long) (rep.strLength + 3) & ~3);
-        str_return = NULL;
-        return -1;
+        _XEatData(dpy, (unsigned long)rep.strLength);
     }
-
-    // ここでWideCharへ変換
-    nLen = UCS2toWideChar(rep.strLength, str, str_return);
-
-    Xfree(str);
 
     UnlockDisplay(dpy);
     SyncHandle();
@@ -803,7 +721,7 @@ int
 XWinIMEGetTargetClause (Display *dpy,
                         int context,
                         int target,
-                        wchar *data,
+                        uint16_t *data,
                         int *attr)
 {
     XExtDisplayInfo *info = find_display (dpy);
@@ -843,21 +761,14 @@ XWinIMEGetTargetClause (Display *dpy,
     }
     TRACE("  *E*");
 
-    if ((str = (char *) malloc(rep.bytes))) {
+    if (data) {
         MyErrorF("  %d bytes.\n", rep.bytes);
-        _XReadPad(dpy, (XPointer)str, (long)rep.bytes);
+        _XReadPad(dpy, (XPointer)data, (long)rep.bytes);
+        nLen = rep.bytes / 2;
     } else {
         TRACE("  malloc error.\n");
         _XEatData(dpy, (unsigned long)rep.bytes);
-        data = NULL;
-        return -1;
     }
-
-    TRACE("  *F*");
-    // ここでWideCharへ変換
-    nLen = UCS2toWideChar(rep.bytes, str, data);
-
-    Xfree(str);
 
     MyErrorF("    check attr: target = %d, current = %d\n", target, rep.curClause);
     switch(rep.attr) {
@@ -923,7 +834,7 @@ XWinIMEGetTargetString (Display *dpy,
                         int context,
                         int target,
                         int offset,
-                        wchar *data)
+                        uint16_t *data)
 {
     XExtDisplayInfo *info = find_display (dpy);
     xWinIMEGetTargetStringReq *req;
@@ -957,18 +868,12 @@ XWinIMEGetTargetString (Display *dpy,
         return -1;
     }
 
-    if ((str = (char *) malloc(rep.bytes))) {
-        _XReadPad(dpy, (XPointer)str, (long)rep.bytes);
+    if (data) {
+        _XReadPad(dpy, (XPointer)data, (long)rep.bytes);
+        nLen = rep.bytes / 2;
     } else {
         _XEatData(dpy, (unsigned long)rep.bytes);
-        data = NULL;
-        return -1;
     }
-
-    // ここでWideCharへ変換
-    nLen = UCS2toWideChar(rep.bytes, str, data);
-
-    Xfree(str);
 
     UnlockDisplay(dpy);
     SyncHandle();

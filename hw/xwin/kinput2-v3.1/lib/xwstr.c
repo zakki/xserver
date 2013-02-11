@@ -79,9 +79,11 @@ static char	*rcsid = "$Id: xwstr.c,v 2.9 1999/01/07 03:13:03 ishisone Exp $";
 #include <X11/Xlib.h>
 #if defined(XlibSpecificationRelease) && XlibSpecificationRelease > 4
 #include <X11/Xfuncs.h>
+#include <X11/Xutil.h>
 #endif
 #include "WStr.h"
 #include "XWStr.h"
+#include <iconv.h>
 
 #ifdef __STDC__
 #include <stdlib.h>
@@ -103,6 +105,7 @@ extern char *malloc();
 #endif
 
 #define bufsize	256
+#define STRING_BUFFER_SIZE 1024
 
 #ifdef __STDC__
 /* static function prototype */
@@ -114,6 +117,8 @@ static int wsdrawstring(Display *, Drawable, XWSGC, int, int,
 static int flushstr();
 static int wsdrawstring();
 #endif
+int convUCS2toUTF8(const wchar *pszUnicodeStr, int nSize, char* pDest);
+int convUTF8toCT(Display *display, const char *str, char *xstr);
 
 XWSGC
 XWSSetGCSet(Display *dpy, GC gc0)
@@ -203,8 +208,10 @@ int len;
 {
 	int			width = 0;
 	FontEnt			*fe;
+    static char szString[STRING_BUFFER_SIZE];
+    int ulen = convUCS2toUTF8(wstr, len, szString);
     fe = &gcset->fe;
-    width = XwcTextEscapement(fe->font, wstr, len);
+    width = Xutf8TextEscapement(fe->font, szString, ulen);
 
 	return width;
 }
@@ -246,10 +253,95 @@ int image;
 {
 	if (cp0 >= cp1 || fe->gc == NULL)
 		return 0;
+    static char szString[STRING_BUFFER_SIZE];
+    int len = convUCS2toUTF8(cp0, cp1 - cp0, szString);
 
 	if (image)
-		XwcDrawImageString(d, w, fe->font, fe->gc, x, y, cp0, cp1 - cp0);
+		Xutf8DrawImageString(d, w, fe->font, fe->gc, x, y, szString, len);
 	else
-		XwcDrawString(d, w, fe->font, fe->gc, x, y, cp0, cp1 - cp0);
-	return XwcTextEscapement(fe->font, cp0, cp1 - cp0);
+		Xutf8DrawString(d, w, fe->font, fe->gc, x, y, szString, len);
+	return Xutf8TextEscapement(fe->font, szString, len);
+}
+
+
+static int
+_Local_wcstombs(
+    iconv_t cd,
+    const char *str,
+    int flen,
+    char *ustr,
+    int len)
+{
+    XPointer from, to;
+    size_t from_left, to_left;
+    int ret, status;
+
+    from = (XPointer) str;
+    from_left = flen;
+    to = (XPointer) ustr;
+    to_left = len;
+
+    while(from_left > 0) {
+        status = iconv(cd, (char **)&from, &from_left, &to, &to_left);
+        if (status < 0) {
+            /* 表現できない文字がきたので'？'で埋める */
+            //*to++ = 0x00;
+            from += 2;
+            from_left -= 2;
+            to_left -= 2;
+        }
+    }
+
+    ret = len - to_left;
+    if (ustr && to_left > 0)
+        ustr[ret] = '\0';
+
+    return ret;
+}
+
+int convUCS2toUTF8(const wchar *pszUnicodeStr, int nSize, char* pDest)
+{
+    iconv_t cd = (iconv_t)-1;
+    int nLen = -1;  // 文字数
+
+    // コード変換コンバータの準備
+    cd = iconv_open("UTF-8", "UCS-2-INTERNAL");
+    if (cd == (iconv_t)-1) {
+        return nLen;
+    }
+
+    nLen = _Local_wcstombs(cd, pszUnicodeStr, nSize * 2, pDest, STRING_BUFFER_SIZE);
+    iconv_close(cd);
+
+    if (nLen == -1) {
+        return nLen;
+    } else {
+        return nLen;
+    }
+}
+
+/* convUTF8toCT -- UTF-8 String -> COMPOUND_TEXT */
+int convUTF8toCT(Display *display, const char *str, char *xstr)
+{
+    XTextProperty prop;
+    char* list[2];
+    int ret;
+
+    list[0] = str;
+    list[1] = NULL;
+    prop.value = NULL;
+    prop.nitems = 0;
+
+    ret = Xutf8TextListToTextProperty(display, list, 1, XCompoundTextStyle, &prop);
+    if (ret != 0) {
+        return 0;
+    }
+
+    if (xstr) {
+        memcpy(xstr, prop.value, prop.nitems);
+        xstr[prop.nitems] = '\0';
+    }
+    XFree(prop.value);
+
+	return prop.nitems;
 }

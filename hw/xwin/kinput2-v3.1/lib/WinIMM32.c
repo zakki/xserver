@@ -75,7 +75,7 @@
 
 #include <X11/extensions/winime.h>
 
-#include <wchar.h>
+//#include <wchar.h>
 
 #ifndef _WCHAR_T
 #define _WCHAR_T /* この定義は jrkanji.h で wcKanjiStatus などを定義するため */
@@ -114,6 +114,8 @@ static int GetTriggerKeys();
 static int PreeditString();
 static int StatusString();
 static void convend(WinIMM32Object obj);
+int convUCS2toUTF8(const wchar *pszUnicodeStr, int nSize, char* pDest);
+int convUTF8toCT(Display *display, const char *str, char *xstr);
 // << 必須
 
 #define uchar	unsigned char
@@ -643,9 +645,11 @@ TRACE(("    Call XWinIMEGetCompositionString...\n"));	/*YA*/
     }
 
     // 戻すためのバッファを確保
-    *length = convJWStoCT(szCompositionString, (unsigned char *)NULL, 0);
+    static char szString[STRING_BUFFER_SIZE];
+    int len = convUCS2toUTF8(szCompositionString, numChar, szString);
+    *length = convUTF8toCT(XtDisplayOfObject((Widget)obj), szString, (unsigned char *)NULL);
     *string = XtMalloc(*length + 1);
-    (void)convJWStoCT(szCompositionString, (unsigned char *)*string, 0);
+    (void)convUTF8toCT(XtDisplayOfObject((Widget)obj), szString, (unsigned char *)*string);
 
     return 0;
 
@@ -762,9 +766,11 @@ TRACE(("    Call XWinIMEGetTargetString...\n"));	/*YA*/
     wprintf(L"a>>%ls\n", szCompositionString);
 
     // 戻すためのバッファを確保
-    *length = convJWStoCT(szCompositionString, (unsigned char *)NULL, 0);
+    static char szString[STRING_BUFFER_SIZE];
+    int len = convUCS2toUTF8(szCompositionString, numChar, szString);
+    *length = convUTF8toCT(XtDisplayOfObject((Widget)obj), szString, (unsigned char *)NULL);
     *string = XtMalloc(*length + 1);
-    (void)convJWStoCT(szCompositionString, (unsigned char *)*string, 0);
+    (void)convUTF8toCT(XtDisplayOfObject((Widget)obj), szString, (unsigned char *)*string);
 
     return 0;
 }
@@ -830,9 +836,11 @@ TRACE(("    WinIMM32: StatusString\n"));	/*YA*/
 	if (*wp == '\r') *wp = '\n';
     }
 
-    *length = len = convJWStoCT(wbuf, (unsigned char *)NULL, 0);
+    static char szString[STRING_BUFFER_SIZE];
+    convUCS2toUTF8(wbuf, wlen, szString);
+    *length = len = convUTF8toCT(XtDisplayOfObject(w), szString, (unsigned char *)NULL);
     *string = XtMalloc(len + 1);
-    (void)convJWStoCT(wbuf, (unsigned char *)*string, 0);
+    (void)convUTF8toCT(XtDisplayOfObject(w), szString, (unsigned char *)*string);
     *nchars = seg->nchars;
 
     /* wbuf を free しておく */
