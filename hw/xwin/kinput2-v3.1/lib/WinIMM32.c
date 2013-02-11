@@ -516,11 +516,6 @@ TRACE(("    WinIMM32: GetSegment return seg.nchars = %d\n", seg.nchars));	/*YA*/
 	TRACE(("\n"));
 }
 
-    if (seg.nchars == 0)
-    {
-	TRACE(("    WinIMM32: GetSegment return NULL.\n"));
-	return NULL;
-    } else
 	return &seg;
 }
 

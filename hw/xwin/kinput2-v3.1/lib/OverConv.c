@@ -2344,6 +2344,20 @@ TRACE(("OverTheSpotConversion:%s()\n", __FUNCTION__));
 	if (start < newseg->nchars) nextLocation(ocw, disploc);
     }
 
+    if (fragments == NULL) {
+	    fragments = dfp = allocDisplayFragment();
+	    dfp->from = start;
+	    dfp->nchars = nchars;
+	    dfp->canvas = disploc->canvas;
+	    dfp->region.x = disploc->x;
+	    dfp->region.y = disploc->y;
+	    dfp->region.width = 0;
+	    dfp->region.height = ocw->overthespot.lineheight;
+	    dfp->next = NULL;
+
+	    disploc->x += dfp->region.width;
+    }
+
 #ifdef USE_WINIME
 TRACE(("OverTheSpotConversion:%s() exit.\n", __FUNCTION__));
 #endif

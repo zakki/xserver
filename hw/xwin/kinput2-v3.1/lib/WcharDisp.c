@@ -343,12 +343,6 @@ MaxChar(Widget w, ICString *seg, int start, int width)
         chars++;
         if (width == cwidth) break;
     }
-    /* while (sp < ep) { */
-    /*     cwidth = charWidth(*sp++, gcset); */
-    /*     if (width < cwidth) break; */
-    /*     chars++; */
-    /*     if ((width -= cwidth) == 0) break; */
-    /* } */
     return chars;
 }
 
