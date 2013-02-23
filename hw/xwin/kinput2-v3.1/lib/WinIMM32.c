@@ -420,7 +420,7 @@ static int
 CursorPos(Widget w, Cardinal *nsegp, Cardinal *ncharp)
 {
     WinIMM32Object obj = (WinIMM32Object)w;
-    int cursor, numClause, curClause, offset, context;
+    int cursor, numClause, curClause, offset;
     Bool bResult;
 
 TRACE(("    WinIMM32: CursorPos\n"));	/*YA*/
@@ -983,80 +983,6 @@ deleteObject(WinIMM32Object obj)
 	}
     }
 }
-
-/*
- * Operations to canna.ibuf
- */
-
-#if 0	// たぶんいらない
-/* cfuncdef
-
-   changeTextForCanna -- ibuf の内容を kanji_status を用いて書き換える。
-
-
-   基本的には候補文字列と候補一覧行文字列に関して以下の処理を行う。
-
-   (1) いずれの文字列もテキストが反転している部分とそうでない部分
-       が存在し、反転している部分は１カ所しか存在しない。
-   (2) したがっていずれの文字列も反転しているところとその両端に反転
-       していない部分とが存在する場合に３部分に分かれることになり、
-       反転している部分の位置や、反転している箇所がない場合などを
-       合わせて考えても３部分以上に分かれることはない。
-   (3) したがって、いずれの文字列も最大３つのセグメントに分けて表示
-       ウィジェットに渡すようにする。
-
- */
-
-static void
-changeTextForWinIMM32(caddr_t cldata, int *ksp)
-{
-/* TBD */
-}
-#endif
-
-/* cfuncdef
-
-   copyInWchar -- wchar をコピーする。
-
-   ws, wlen で示された wchar 文字列を wsbuf のポイント先のバッファに格
-   納する。wsbuf のサイズは wssize のポイント先に格納されている値で指
-   定されるが、それでは小さい時は copyInWchar 内で XtRealloc され、新
-   たにアロケートされたバッファが wsbuf のポイント先に格納される。また、
-   バッファの新たなサイズが wssize のポイント先に格納される。得られた
-   文字数がwslen のポイント先に格納される。
-
- */
-
-static void
-copyInWchar(wchar *ws, int wlen, wchar **wsbuf, int *wssize, int *wslen)
-{
-    int i;
-
-    if (*wssize == 0) {
-	*wsbuf = (wchar *)XtMalloc((wlen + 1) * sizeof(wchar));
-	*wssize = wlen + 1;
-    }
-    if (wlen + 1 > *wssize) {
-	*wsbuf = (wchar *)XtRealloc((char *)*wsbuf, (wlen + 1) * sizeof(wchar));
-	*wssize = wlen + 1;
-    }
-    *wslen = wlen;
-    (void)bcopy(ws, *wsbuf, wlen * sizeof(wchar));
-    *(*wsbuf + wlen) = (wchar)0;
-}
-
-/* cfuncdef
-
-   fixProcForCanna -- 確定した文字の処理を行う
-
- */
-
-static void
-fixProcForWinIMM32(caddr_t cldata, wchar *fixedstr, int fixedlen)
-{
-/* TBD */
-}
-
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////

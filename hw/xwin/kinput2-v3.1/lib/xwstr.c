@@ -124,7 +124,6 @@ XWSGC
 XWSSetGCSet(Display *dpy, GC gc0)
 {
 	XWSGC	gcset;
-	int	i;
 
 	gcset = (XWSGC)malloc(sizeof(XWSGCSet));
 	if (gcset == NULL)
@@ -135,7 +134,6 @@ XWSSetGCSet(Display *dpy, GC gc0)
 	if (gcset->fe.gc == NULL) {
 		gcset->fe.font = NULL;
 	} else {
-		XFontSet font;
 //		gcset->fe.font = font = XQueryFont(dpy, XGContextFromGC(gcset->fe[i].gc));
 		gcset->fe.flag = FONTQUERY;
 //		if (IS2B(font))
@@ -180,7 +178,7 @@ int *ascent;
 int *descent;
 {
 	FontEnt	*fep = &(gcset->fe);
-	int	i, j;
+	int	j;
 	int	asc = 0;
 	int	dsc = 0;
 	int font_cnt;

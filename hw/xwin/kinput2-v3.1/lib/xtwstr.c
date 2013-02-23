@@ -35,7 +35,6 @@ XtWSGetGCSet(Widget w, unsigned long mask, XGCValues *values, XFontSet font)
 {
 	XGCValues	gcval;
 	XWSGC		gcset;
-	int		i;
 
 	gcset = (XWSGC)XtMalloc(sizeof(XWSGCSet));
 	gcset->fe.font = font;

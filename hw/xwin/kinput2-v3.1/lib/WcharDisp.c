@@ -377,24 +377,6 @@ expandControlChars(const wchar *org, int orglen, wchar *res)
     }
 }
 
-#define WITHIN_RANGE_2D(row, col, fs) \
-    ((fs)->min_byte1 <= (row) && (row) <= (fs)->max_byte1 && \
-     (fs)->min_char_or_byte2 <= (col) && (col) <= (fs)->max_char_or_byte2)
-
-#define WITHIN_RANGE(c, fs) \
-    ((fs)->min_char_or_byte2 <= (c) && (c) <= (fs)->max_char_or_byte2)
-
-#define CHAR_INFO_2D(row, col, fs) \
-    ((fs)->per_char + ((row) - (fs)->min_byte1) * \
-     ((fs)->max_char_or_byte2 - (fs)->min_char_or_byte2 + 1) + \
-     ((col) - (fs)->min_char_or_byte2))
-
-#define CHAR_INFO(c, fs) \
-    ((fs)->per_char + ((c) - (fs)->min_char_or_byte2))
-
-#define CHAR_EXIST(csp) \
-    ((csp)->width != 0 || ((csp)->rbearing != 0) || ((csp)->lbearing != 0))
-
 
 /*
  * jpWcharDisplay definition
