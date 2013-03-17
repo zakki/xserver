@@ -225,8 +225,8 @@ static
 char *
 _sModeNames[MODE_MAX_NUM] = 
 {   /* ここに設定するCompound-Textは最大20文字にしてください */
-    "      ",			        /* AlphaMode */
-    "\033(B[ \033$(B\044\042\033(B ]"	/*[ あ ]*/  /* EmptyMode */ 
+    "      ",                           /* AlphaMode */
+    "\033(B[ \033$(B\044\042\033(B ]"   /*[ あ ]*/  /* EmptyMode */ 
 };
 
 /*
@@ -261,10 +261,10 @@ ClassInitialize()
 static BOOL checkIMEKey(XKeyEvent* ev)
 {
     if ((ev->keycode == g_TriggerKeycode) &&
-    	((ev->state & g_TriggerModifier) == g_TriggerModifier))
+        ((ev->state & g_TriggerModifier) == g_TriggerModifier))
     {
-	TRACE(("  XIM end trigger key found.\n"));
-    	return TRUE;
+        TRACE(("  XIM end trigger key found.\n"));
+        return TRUE;
     }
 
     return FALSE;
@@ -293,93 +293,88 @@ InputEvent(Widget w, XEvent *event)
     TRACE(("    WinIMM32: InputEvent\n"));	/*YA*/
     /* KeyPress以外は捨てる */
     TRACE(("Key Event(type = %d, time = %ld, keycode = %d ignore = %d).\n", event->type, ev->time, ev->keycode, g_ignore_key));
-    if (event->type != KeyPress /*&& event->type != KeyRelease*/)
-    {
-	TRACE(("      Not KeyPress Event(type = %d, time = %ld, keycode = %d).\n", event->type, ev->time, ev->keycode));
-	return 0;
+    if (event->type != KeyPress /*&& event->type != KeyRelease*/) {
+        TRACE(("      Not KeyPress Event(type = %d, time = %ld, keycode = %d).\n", event->type, ev->time, ev->keycode));
+        return 0;
     }
 
-    if (ev->time > LOCALEVENT_MAX)
-    {
-	if (ev->keycode == 255)
-	{
-	    TRACE(("      IME Proccessed Event.\n"));
-	    return 0;
-	} else
-	{
-	    // dummyのイベントではないのでクライアントに戻す
-	    TRACE(("      Not Dummy Event.\n"));
+    if (ev->time > LOCALEVENT_MAX) {
+        if (ev->keycode == 255)
+        {
+            TRACE(("      IME Proccessed Event.\n"));
+            return 0;
+        } else
+        {
+            // dummyのイベントではないのでクライアントに戻す
+            TRACE(("      Not Dummy Event.\n"));
 
-	    // 終了のキーシーケンスかどうか調べる
-	    if (checkIMEKey(ev) == TRUE)
-	    {
-		convend(obj);
-		return 0;
-	    }
+            // 終了のキーシーケンスかどうか調べる
+            if (checkIMEKey(ev) == TRUE) {
+                convend(obj);
+                return 0;
+            }
 
-	    return 1;
-	}
+            return 1;
+        }
     }
 
-TRACE(("      time: %d\n", ev->time));
+    TRACE(("      time: %d\n", ev->time));
 
     /* ベルを鳴らすディスプレイの設定 */
     displaybell = XtDisplayOfObject((Widget)obj);
 
     switch (ev->time)
     {
-	case 1:		// 終わり
-	    fix(obj);
-	    // fallthrough
-	case 0:		// 文字入力あり
-	    {
-TRACE(("*** XtCallCallbackList ***: textchangecallback\n"));
-		XtCallCallbackList(w, obj->inputConv.textchangecallback, (XtPointer)NULL);
-	    }
+        case 1:		// 終わり
+            fix(obj);
+            // fallthrough
+        case 0:		// 文字入力あり
+        {
+            TRACE(("*** XtCallCallbackList ***: textchangecallback\n"));
+            XtCallCallbackList(w, obj->inputConv.textchangecallback, (XtPointer)NULL);
+        }
 
-	    /* 入力モードをチェックする */
-TRACE(("    Call XWinIMEGetConversionStatus(1)...\n"));	/*YA*/
-	    XWinIMEGetConversionStatus(obj->winimm32.dpy, -1, &fopen, &conversion, &sentence, &fmodify);
-	    if (fmodify)
-	    {
-TRACE(("*** XtCallCallbackList ***: modechangecallback\n"));
-		XtCallCallbackList(w, obj->inputConv.modechangecallback, (XtPointer)NULL);
-	    }
+            /* 入力モードをチェックする */
+            TRACE(("    Call XWinIMEGetConversionStatus(1)...\n"));	/*YA*/
+            XWinIMEGetConversionStatus(obj->winimm32.dpy, -1, &fopen, &conversion, &sentence, &fmodify);
+            if (fmodify) {
+                TRACE(("*** XtCallCallbackList ***: modechangecallback\n"));
+                XtCallCallbackList(w, obj->inputConv.modechangecallback, (XtPointer)NULL);
+            }
 // >> 候補ウィンドウの座標をあらかじめ設定する
-	    {
-		ICSelectionControlArg arg;
+            {
+                ICSelectionControlArg arg;
 
-		arg.command = ICSelectionCalc;
-		arg.u.selection_kind = 0;	// 0 はダミー
-TRACE(("*** XtCallCallbackList ***: selectioncallback, ICSelectionCalc\n"));
-		XtCallCallbackList((Widget)obj, obj->inputConv.selectioncallback, (XtPointer)&arg);
-	    }
+                arg.command = ICSelectionCalc;
+                arg.u.selection_kind = 0;	// 0 はダミー
+                TRACE(("*** XtCallCallbackList ***: selectioncallback, ICSelectionCalc\n"));
+                XtCallCallbackList((Widget)obj, obj->inputConv.selectioncallback, (XtPointer)&arg);
+            }
 // << 候補ウィンドウの座標をあらかじめ設定する
-	    break;
-	case 2:		// 終了チェック
-	    convend(obj);
-	    break;
-	case 3:		// 候補ウィンドウ
-	    {
-		ICSelectionControlArg arg;
+            break;
+        case 2:		// 終了チェック
+            convend(obj);
+            break;
+        case 3:		// 候補ウィンドウ
+        {
+            ICSelectionControlArg arg;
 
-		if (ev->subwindow == -1)
-		{
-		    arg.command = ICSelectionEnd;
-		    arg.u.current_item = -1;
-TRACE(("*** XtCallCallbackList ***: selectioncallback, ICSelectionEnd\n"));
-		    XtCallCallbackList((Widget)obj, obj->inputConv.selectioncallback, (XtPointer)&arg);
-		} else
-		{
-		    arg.command = ICSelectionStart;
-		    arg.u.selection_kind = ev->subwindow;
-TRACE(("*** XtCallCallbackList ***: selectioncallback, ICSelectionStart\n"));
-		    XtCallCallbackList((Widget)obj, obj->inputConv.selectioncallback, (XtPointer)&arg);
-		}
-	    }
-	    break;
+            if (ev->subwindow == -1) {
+                arg.command = ICSelectionEnd;
+                arg.u.current_item = -1;
+                TRACE(("*** XtCallCallbackList ***: selectioncallback, ICSelectionEnd\n"));
+                XtCallCallbackList((Widget)obj, obj->inputConv.selectioncallback, (XtPointer)&arg);
+            } else
+            {
+                arg.command = ICSelectionStart;
+                arg.u.selection_kind = ev->subwindow;
+                TRACE(("*** XtCallCallbackList ***: selectioncallback, ICSelectionStart\n"));
+                XtCallCallbackList((Widget)obj, obj->inputConv.selectioncallback, (XtPointer)&arg);
+            }
+        }
+        break;
 //	case 4:		// かな漢開始
-//	    break;
+//        break;
     }
 
     return 0;
@@ -426,22 +421,21 @@ CursorPos(Widget w, Cardinal *nsegp, Cardinal *ncharp)
 TRACE(("    WinIMM32: CursorPos\n"));	/*YA*/
 TRACE(("    Call XWinIMEGetCursorPosition...\n"));	/*YA*/
     bResult = XWinIMEGetCursorPosition (obj->winimm32.dpy, -1, &cursor, &numClause, &curClause, &offset);
-    if (bResult == True)
-    {
-	if (nsegp != NULL)
-	    *nsegp = curClause;
-	if (ncharp != NULL)
-	    *ncharp = offset;
-TRACE(("    WinIMM32: CursorPos return: curClause = %d, offset = %d\n", curClause, offset));	/*YA*/
-	return 1;
+    if (bResult == True) {
+        if (nsegp != NULL)
+            *nsegp = curClause;
+        if (ncharp != NULL)
+            *ncharp = offset;
+        TRACE(("    WinIMM32: CursorPos return: curClause = %d, offset = %d\n", curClause, offset));	/*YA*/
+        return 1;
     } else
     {
-	if (nsegp != NULL)
-	    *nsegp = 0;
-	if (ncharp != NULL)
-	    *ncharp = 0;
-TRACE(("    WinIMM32: CursorPos return: no cursor.\n"));	/*YA*/
-	return 0;
+        if (nsegp != NULL)
+            *nsegp = 0;
+        if (ncharp != NULL)
+            *ncharp = 0;
+        TRACE(("    WinIMM32: CursorPos return: no cursor.\n"));	/*YA*/
+        return 0;
     }
 }
 
@@ -460,14 +454,13 @@ NumSegments(Widget w)
 TRACE(("    WinIMM32: NumSegments\n"));	/*YA*/
 TRACE(("    Call XWinIMEGetCursorPosition...\n"));	/*YA*/
     bResult = XWinIMEGetCursorPosition (obj->winimm32.dpy, -1, &cursor, &numClause, &curClause, &offset);
-    if (bResult == True)
-    {
-TRACE(("    WinIMM32: Segments Num = %d\n", numClause));	/*YA*/
-	return numClause;
+    if (bResult == True) {
+        TRACE(("    WinIMM32: Segments Num = %d\n", numClause));	/*YA*/
+        return numClause;
     } else
     {
-TRACE(("    WinIMM32: ERROR.\n"));	/*YA*/
-	return 0;
+        TRACE(("    WinIMM32: ERROR.\n"));	/*YA*/
+        return 0;
     }
 }
 
@@ -492,10 +485,9 @@ TRACE(("    WinIMM32: GetSegment\n"));	/*YA*/
 TRACE(("    Call XWinIMEGetTargetClause...\n"));	/*YA*/
     numChars = XWinIMEGetTargetClause(obj->winimm32.dpy, -1, n, data, &attr);
 
-    if (numChars == -1)
-    {
-	TRACE(("    WinIMM32: GetSegment ERROR.\n"));
-	return NULL;
+    if (numChars == -1) {
+        TRACE(("    WinIMM32: GetSegment ERROR.\n"));
+        return NULL;
     }
 
     data[numChars] = (wchar)0;
@@ -508,15 +500,14 @@ TRACE(("    Call XWinIMEGetTargetClause...\n"));	/*YA*/
 TRACE(("    WinIMM32: GetSegment return seg.nchars = %d\n", seg.nchars));	/*YA*/
 
 {
-	int i;
-	for (i=0; i< numChars + 1; i++)
-	{
-		TRACE(("        0x%X\n", data[i]));
-	}
-	TRACE(("\n"));
+    int i;
+    for (i=0; i< numChars + 1; i++) {
+        TRACE(("        0x%X\n", data[i]));
+    }
+    TRACE(("\n"));
 }
 
-	return &seg;
+    return &seg;
 }
 
 /*
@@ -548,7 +539,7 @@ TRACE(("      nsame = %d, len = %d\n",nsame, len));	/*YA*/
 TRACE(("      nsame = %d, len = %d\n",nsame, len));	/*YA*/
 
     if (nsame != len || len != seg1->nchars || len != seg2->nchars)
-	result |= ICStringChanged;
+        result |= ICStringChanged;
 
     if (n) *n = nsame;
 
@@ -632,11 +623,10 @@ TRACE(("    Call XWinIMEGetCompositionString...\n"));	/*YA*/
     *length = numChar * sizeof(wchar);
 
     szCompositionString[numChar] = (wchar)0;
-    if (*length < 0)
-    {
-	TRACE(("  XWinIMEGetCompositionString failed.\n"));
-	string = NULL;
-	return -1;
+    if (*length < 0) {
+        TRACE(("  XWinIMEGetCompositionString failed.\n"));
+        string = NULL;
+        return -1;
     }
 
     // 戻すためのバッファを確保
@@ -800,14 +790,14 @@ StatusString(Widget w, Atom *encoding, int *format, int *length, XtPointer *stri
 TRACE(("    WinIMM32: StatusString\n"));	/*YA*/
     seg = GetMode(w);
     if (seg == NULL) {
-	*length = *nchars = 0;
-	return -1;
+        *length = *nchars = 0;
+        return -1;
     }
 
     wlen = seg->nchars;
     if (wlen <= 0) {
-	*length = *nchars = 0;
-	return -1;
+        *length = *nchars = 0;
+        return -1;
     }
 
     /*
@@ -828,7 +818,7 @@ TRACE(("    WinIMM32: StatusString\n"));	/*YA*/
 
     /* COMPOUND_TEXT は \r が送れないので \n に変換しておく */
     for (wp = wbuf; *wp != 0; wp++) {
-	if (*wp == '\r') *wp = '\n';
+        if (*wp == '\r') *wp = '\n';
     }
 
     static char szString[STRING_BUFFER_SIZE];
@@ -854,36 +844,26 @@ Initialize(Widget req, Widget new, ArgList args, Cardinal *num_args)
     Display *dpy;
 
 TRACE(("    WinIMM32: Initialize\n"));	/*YA*/
-    if (obj == NULL)
-    {
-	TRACE(("    WinIMM32: Target object is NULL.\n"));	/*YA*/
+    if (obj == NULL) {
+        TRACE(("    WinIMM32: Target object is NULL.\n"));	/*YA*/
     }
-    if (req == NULL)
-    {
-	TRACE(("    WinIMM32: Request object is NULL.\n"));	/*YA*/
+    if (req == NULL) {
+        TRACE(("    WinIMM32: Request object is NULL.\n"));	/*YA*/
     }
     TRACE(("    WinIMM32: XtDisplayOfObject...\n"));	/*YA*/
     dpy = XtDisplayOfObject(req);
-    if (dpy == NULL)
-    {
-	TRACE(("    WinIMM32: Can't get display.\n"));	/*YA*/
+    if (dpy == NULL) {
+        TRACE(("    WinIMM32: Can't get display.\n"));	/*YA*/
     }
     obj->winimm32.dpy = dpy;
 #if 0
-TRACE(("    Call XWinIMEGetLastContext...\n"));	/*YA*/
-    if (XWinIMEGetLastContext (dpy, &context))
-    {
-	obj->winimm32.context = context;
+    TRACE(("    Call XWinIMEGetLastContext...\n"));	/*YA*/
+    if (XWinIMEGetLastContext (dpy, &context)) {
+        obj->winimm32.context = context;
     } else
     {
-	obj->winimm32.context = 0;
+        obj->winimm32.context = 0;
     }
-#endif
-#if 0	// 変わらなかったので削除
-// >> atoc.cのまね
-TRACE(("*** XtCallCallbackList ***: modechangecallback\n"));
-	XtCallCallbackList(obj, obj->inputConv.modechangecallback, (XtPointer)NULL);
-// << atoc.cのまね
 #endif
 TRACE(("    WinIMM32: Initialize end(context = #%d).\n", context));	/*YA*/
 }
@@ -926,7 +906,7 @@ TRACE(("    WinIMM32: fix\n"));	/*YA*/
     /* 確定の処理 */
 TRACE(("*** XtCallCallbackList ***: fixcallback\n"));
     XtCallCallbackList((Widget)obj, obj->inputConv.fixcallback,
-		       (XtPointer)NULL);	/* ？？？ */
+                       (XtPointer)NULL);	/* ？？？ */
 }
 
 static void
@@ -935,7 +915,7 @@ convend(WinIMM32Object obj)
 TRACE(("    WinIMM32: convend\n"));	/*YA*/
 TRACE(("*** XtCallCallbackList ***: endcallback\n"));
     XtCallCallbackList((Widget)obj, obj->inputConv.endcallback,
-		       (XtPointer)NULL);
+                       (XtPointer)NULL);
 }
 
 /*
@@ -966,21 +946,21 @@ deleteObject(WinIMM32Object obj)
     ObjRec *objp, *objp0;
 
     for (objp0 = NULL, objp = ObjList;
-	 objp != NULL;
-	 objp0 = objp, objp = objp->next)
+         objp != NULL;
+         objp0 = objp, objp = objp->next)
     {
-	if (objp->obj == obj)
-	{
-	    if (objp0 == NULL)
-	    {
-		ObjList = objp->next;
-	    } else
-	    {
-		objp0->next = objp->next;
-	    }
-	    XtFree((char *)objp);
-	    return;
-	}
+        if (objp->obj == obj)
+        {
+            if (objp0 == NULL)
+            {
+                ObjList = objp->next;
+            } else
+            {
+                objp0->next = objp->next;
+            }
+            XtFree((char *)objp);
+            return;
+        }
     }
 }
 
@@ -1003,12 +983,11 @@ TRACE(("    Call XWinIMEGetConversionStatus(2)...\n"));	/*YA*/
 
     if (fopen == 0)
     {	// IMEがクローズ中
-	*length = wcslen(_wcsModeNames[0]);
-	return _wcsModeNames[0];
+        *length = wcslen(_wcsModeNames[0]);
+        return _wcsModeNames[0];
     } else
     {	// オープン中は何も考えずに"[ あ ]"
-	*length = wcslen(_wcsModeNames[1]);
-	return _wcsModeNames[1];
+        *length = wcslen(_wcsModeNames[1]);
+        return _wcsModeNames[1];
     }
 }
-

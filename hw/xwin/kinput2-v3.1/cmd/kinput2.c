@@ -80,7 +80,6 @@ int	debug_all;
 typedef struct {
     char *conversionEngine;
     int debugLevel;
-    Boolean useXimpProtocol;
     Boolean useXIMProtocol;
     Boolean appdefs_loaded;
 } AppResRec, *AppResP;
@@ -92,8 +91,6 @@ static XtResource app_resources[] = {
       XtOffset(AppResP, conversionEngine), XtRString, (XtPointer)"" },
     { "debugLevel", "DebugLevel", XtRInt, sizeof(int),
       XtOffset(AppResP, debugLevel), XtRImmediate, (XtPointer)0 },
-    { "useXimpProtocol", "UseXimpProtocol", XtRBoolean, sizeof(Boolean),
-      XtOffset(AppResP, useXimpProtocol), XtRImmediate, (XtPointer)True },
     { "useXIMProtocol", "UseXIMProtocol", XtRBoolean, sizeof(Boolean),
       XtOffset(AppResP, useXIMProtocol), XtRImmediate, (XtPointer)True },
     { "ki2AppDefsLoaded", "Ki2AppDefsLoaded", XtRBoolean, sizeof(Boolean),
@@ -113,18 +110,15 @@ static XrmOptionDescRec	options[] = {
     {"-font",		"*JpWcharDisplay.font",	XrmoptionSepArg,	NULL},
     {"-kanjifont",	"*JpWcharDisplay.kanjiFont", XrmoptionSepArg,	NULL},
     {"-kanafont",	"*JpWcharDisplay.kanaFont", XrmoptionSepArg,	NULL},
-    {"-ximp",		".useXimpProtocol",	XrmoptionNoArg,		"on"},
     {"+ximp",		".useXimpProtocol",	XrmoptionNoArg,		"off"},
     {"-xim",		".useXIMProtocol",	XrmoptionNoArg,		"on"},
     {"+xim",		".useXIMProtocol",	XrmoptionNoArg,		"off"},
     {"-tbheight",	"*ConversionControl.titlebarHeight",
-						XrmoptionSepArg,	NULL},
+     XrmoptionSepArg,	NULL},
 #ifdef DEBUG
     {"-debug",		".debugLevel",		XrmoptionNoArg,		"1"},
     {"-trace",		".debugLevel",		XrmoptionNoArg,		"10"},
     {"-debuglevel",	".debugLevel",		XrmoptionSepArg,	NULL},
-#endif
-#ifdef USE_WINIME
 #endif
 };
 
@@ -157,23 +151,11 @@ static void	print_version();
 #endif	// #ifndef USE_WINIME
 
 #ifdef USE_WINIME
-#if 0	/// 外に追い出す
-typedef struct _IMEProcessedKey
-{
-    Time time;
-    unsigned int keycode;
-    struct _IMEProcessedKey *next;
-} IMEProcessedKey;
-
-static IMEProcessedKey *key_list = (IMEProcessedKey *) NULL;
-static IMEProcessedKey *unreg_list = (IMEProcessedKey *) NULL;
-#else
 #include "../../winimedefs.h"
 
 IMEProcessedKey* g_key_list = NULL;
 IMEProcessedKey* g_unreg_list = NULL;
 BOOL g_ignore_key = FALSE;
-#endif
 
 int winim_clients = 0;
 
@@ -243,11 +225,9 @@ initKinput2(const char *display)
     char* pszDisplay;
     static unsigned long s_ulServerGeneration = 0;
 
-#if 1	// イベントループ改造
     int iReturn;
     int iConnectionNumber = 0;
     fd_set fdsSelect;
-#endif	// イベントループ改造
 
     TRACE (("internalKinput2Proc - initKinput2()\n"));
 
@@ -303,9 +283,6 @@ initKinput2(const char *display)
     }
 // << -clipboard をつけないと「Error: Can't open display: 127.0.0.1:0.0」になってしまうのでその対策（clipboardから持ってきた）
 
-#if 1
-#if 1
-
     TRACE(("winInitImServer ()- call XtToolkitThreadInitialize\n"));
     if (!XtToolkitThreadInitialize())
     {
@@ -325,58 +302,10 @@ initKinput2(const char *display)
 
 //TRACE(("  initKinput2 - a\n"));
     toplevel = XtAppInitialize(&apc, "Kinput2imm32",
-#else	// #if 1
-    toplevel = XtAppInitialize(&apc, "Kinput2",
-#endif	// #if 1
-			       options, XtNumber(options),
-			       &ac, av,
-			       fallback_resources, (ArgList)NULL, 0);
+                               options, XtNumber(options),
+                               &ac, av,
+                               fallback_resources, (ArgList)NULL, 0);
 
-#else	// #if 1
-    XtToolkitInitialize();
-    apc = XtCreateApplicationContext();
-    XtAppSetFallbackResources(apc, fallback_resources);
-
-    /* Setup the display connection string x */
-    /*
-     * NOTE: Always connect to screen 0 since we require that screen
-     * numbers start at 0 and increase without gaps.  We only need
-     * to connect to one screen on the display to get events
-     * for all screens on the display.  That is why there is only
-     * one clipboard client thread.
-     */
-    snprintf (szDisplay, 512, "127.0.0.1:%s.0", display);
-
-    /* Print the display connection string */
-    TRACE (("internalKinput2Proc - DISPLAY=%s\n", szDisplay));
-
-    /* Open the X display */
-    do
-    {
-        pDisplay = XOpenDisplay (szDisplay);
-        if (pDisplay == NULL)
-	{
-	    TRACE (("internalKinput2Proc - Could not open display, "
-		    "try: %d, sleeping: %d\n",
-		    iRetries + 1, WIN_CONNECT_DELAY));
-	    ++iRetries;
-	    sleep (WIN_CONNECT_DELAY);
-	    continue;
-	} else
-	    break;
-    } while (pDisplay == NULL && s_ulServerGeneration == serverGeneration);
-//return 1;
-
-    /* Make sure that the display opened */
-    if (pDisplay == NULL)
-    {
-        TRACE (("internalKinput2Proc - Failed opening the display, giving up\n"));
-        return 1;
-    }
-
-    toplevel = XtAppCreateShell("Kinput2Imm32", "Kinput2", applicationShellWidgetClass, pDisplay, NULL, 0);
-return 1;
-#endif	// #if 1
 
     /* initialize asynchronous error handler */
     XAEInit();
@@ -408,7 +337,6 @@ return 1;
 
     // cheat
     debug_all = 10;	// force Trace mode	Y.Arai
-    appres.useXimpProtocol = False;
 
 #ifdef RANDOM_ID
     /*
@@ -460,26 +388,6 @@ return 1;
 
     numProtocols = 0;
 
-    if (appres.useXimpProtocol)
-    {
-        abort();
-/*
-	TRACE(("internalKinput2: Use Ximp.\n"));
-	protocol = XtVaCreateWidget("ximpprotocol",
-				    ximpProtocolWidgetClass,
-				    manager,
-				    XtNlocaleName, "ja_JP",
-				    XtNinputObjectClass, inputobjclass,
-				    XtNdisplayObjectClass, displayobjclass,
-				    XtNwidth, 1,
-				    XtNheight, 1,
-				    NULL);
-	XtAddCallback(protocol, XtNdestroyCallback,
-		      Destroyed, (XtPointer)NULL);
-	numProtocols++;
-*/
-    }
-
     if (appres.useXIMProtocol)
     {
 	TRACE(("internalKinput2: Use XIM.\n"));
@@ -510,12 +418,9 @@ return 1;
 
     XtDestroyWidget(inputobj); /* Don't move this before XtRealizeWidget() */
 
-// >> ※
-#if 1
     pDisplay = XtDisplay(toplevel);
-TRACE(("    DISPLAY=%s\n", DisplayString(pDisplay)));
-//fprintf(stderr, "display: %s\n", pDisplay->display_name);
-TRACE(("    Call XWinIMEQueryExtension...\n"));	/*YA*/
+    TRACE(("    DISPLAY=%s\n", DisplayString(pDisplay)));
+    TRACE(("    Call XWinIMEQueryExtension...\n"));	/*YA*/
     if (!XWinIMEQueryExtension (pDisplay, &iIMEEventBase, &iIMEErrorBase))
     {
         TRACE (("winImServerProc - No IME Extension\n"));
@@ -524,7 +429,6 @@ TRACE(("    Call XWinIMEQueryExtension...\n"));	/*YA*/
 
 TRACE(("    Call XWinIMESelectInput...\n"));	/*YA*/
     XWinIMESelectInput (pDisplay, WinIMENotifyMask);
-#endif
 #if 0
     pIMWindow = XCreateSimpleWindow (pDisplay, DefaultRootWindow (pDisplay),
 				     0, 0, 1, 1, 1, 0, 0);
@@ -576,7 +480,6 @@ TRACE(("    Call XWinIMESelectInput...\n"));	/*YA*/
     //XMapWindow (pDisplay, pIMWindow);
     XFlush (pDisplay);			/* necessary flush for tcp/ip connection */
 #endif
-// << ※
 
 //    procID = XtAppAddWorkProc(XtWidgetToApplicationContext(toplevel), FlushThread, (XtPointer)NULL);
 //#ifdef USE_WINTHREAD
@@ -587,95 +490,89 @@ TRACE(("    Call XWinIMESelectInput...\n"));	/*YA*/
 
     for (;;)
     {
-	XEvent event;
-	int nStat;
-	struct timeval tv;
+        XEvent event;
+        int nStat;
+        struct timeval tv;
 
-#if 1
 #ifndef USE_WINTHREAD
-	FD_ZERO (&fdsSelect);
-	// まずアプリケーションシェルの奴
-	iConnectionNumber = ConnectionNumber (pDisplay);
-	FD_SET (iConnectionNumber, &fdsSelect);
+        FD_ZERO (&fdsSelect);
+        // まずアプリケーションシェルの奴
+        iConnectionNumber = ConnectionNumber (pDisplay);
+        FD_SET (iConnectionNumber, &fdsSelect);
 
-	/* Wait for a Windows event or an X event */
-	tv.tv_sec = SELECT_TIMEOUT_SEC;
-	tv.tv_usec = SELECT_TIMEOUT_MICROSEC;
+        /* Wait for a Windows event or an X event */
+        tv.tv_sec = SELECT_TIMEOUT_SEC;
+        tv.tv_usec = SELECT_TIMEOUT_MICROSEC;
 #endif	// #ifndef USE_WINTHREAD
 
-	TRACE(("internal kinput2 loop::\n"));
+        TRACE(("internal kinput2 loop::\n"));
 
 #ifndef USE_WINTHREAD
-	iReturn = select (iConnectionNumber + 1,/* Highest fds number */
-			  &fdsSelect,		/* Read mask */
-			  NULL,			/* No write mask */
-			  NULL,			/* No exception mask */
-			  &tv);			/* timeout = 1sec*/
-	if (iReturn < 0 && errno != EINTR)
-	{
-	    switch (errno) {
-	    case EBADF:
-		TRACE (("EBADF"));
-		break;
-	    case EINTR:
-		TRACE (("EINTR"));
-		break;
-	    case EINVAL:
-		TRACE (("EINVAL"));
-		break;
-	    case ENOMEM:
-		TRACE (("ENOMEM"));
-		break;
-	    }
-	    TRACE (("Call to select () failed: %d.  Bailing.\n", iReturn));
-	    break;
-	}
+        iReturn = select (iConnectionNumber + 1,/* Highest fds number */
+                          &fdsSelect,		/* Read mask */
+                          NULL,			/* No write mask */
+                          NULL,			/* No exception mask */
+                          &tv);			/* timeout = 1sec*/
+        if (iReturn < 0 && errno != EINTR)
+        {
+            switch (errno) {
+            case EBADF:
+                TRACE (("EBADF"));
+                break;
+            case EINTR:
+                TRACE (("EINTR"));
+                break;
+            case EINVAL:
+                TRACE (("EINVAL"));
+                break;
+            case ENOMEM:
+            TRACE (("ENOMEM"));
+            break;
+            }
+            TRACE (("Call to select () failed: %d.  Bailing.\n", iReturn));
+            break;
+        }
 #endif	// #ifndef USE_WINTHREAD
 
 ///	TRACE(("internal kinput2 loop::\n"));
 
-TRACE(("  dispatchException(1) = %d\n", dispatchException));
-	if (dispatchException != 0)
-	{
-	    TRACE(("kinput2 exit.\n"));
-	    break;
-	}
+        TRACE(("  dispatchException(1) = %d\n", dispatchException));
+        if (dispatchException != 0)
+        {
+            TRACE(("kinput2 exit.\n"));
+            break;
+        }
 
 #ifndef USE_WINTHREAD
-	if (iReturn == 0)
-	{	// 多分タイムアウト
-	    TRACE(("  ** TIMEOUT **, continue\n"));
-	    if (XEventsQueued(pDisplay, QueuedAfterReading) == 0)
-	    {
-		XFlush(pDisplay);
-		continue;
-	    }
-	}
+        if (iReturn == 0)
+        {	// 多分タイムアウト
+            TRACE(("  ** TIMEOUT **, continue\n"));
+            if (XEventsQueued(pDisplay, QueuedAfterReading) == 0)
+            {
+                XFlush(pDisplay);
+                continue;
+            }
+        }
 #endif	// #ifndef USE_WINTHREAD
 
-#else
-	TRACE(("internal kinput2 loop::\n"));
-#endif
-	XtAppNextEvent(apc, &event);
+        XtAppNextEvent(apc, &event);
 
-TRACE(("  a\n"));
-	XtDispatchEvent(&event);
+        TRACE(("  a\n"));
+        XtDispatchEvent(&event);
 
-TRACE(("  b\n"));
-	nStat = winXIMEXEventHandler (pDisplay, &event, iIMEEventBase, iIMEErrorBase);
+        TRACE(("  b\n"));
+        nStat = winXIMEXEventHandler (pDisplay, &event, iIMEEventBase, iIMEErrorBase);
 
-	if (nStat == 1)
-	    continue;
-	else if (nStat == -1)
-	    break;
-	MyDispatchEvent(&event); /* additional dispatcher */
+        if (nStat == 1)
+            continue;
+        else if (nStat == -1)
+            break;
+        MyDispatchEvent(&event); /* additional dispatcher */
     }
-TRACE(("@@ Kinput2 cleanup @@\n\n"));
+    TRACE(("@@ Kinput2 cleanup @@\n\n"));
 
-                               //#ifdef USE_WINTHREAD
     XtRemoveWorkProc(procID);
-                               //#endif
-    freeProcessKeyLists();
+     freeProcessKeyLists();
 //    DeleteAllExtContext();	// このタイミングではもうイベントが動かない可能性が高いのでやめ
     g_fIMEStarted = FALSE;
 TRACE(("@@ internal Kinput2 exit @@\n"));
@@ -691,190 +588,21 @@ freeProcessKeyLists(void)
 
     while (pitem != NULL)
     {
-	pTemp = pitem->next;
-	free(pitem);
-	pitem = pTemp;
+        pTemp = pitem->next;
+        free(pitem);
+        pitem = pTemp;
     }
 
     pitem = g_unreg_list;
     while (pitem != NULL)
     {
-	pTemp = pitem->next;
-	free(pitem);
-	pitem = pTemp;
+        pTemp = pitem->next;
+        free(pitem);
+        pitem = pTemp;
     }
 
     g_key_list = NULL;
     g_unreg_list = NULL;
-}
-
-#else
-int
-main(ac, av)
-int ac;
-char **av;
-{
-    Widget manager, protocol;
-    int i;
-    WidgetClass inputobjclass, displayobjclass;
-    Widget inputobj;
-
-    toplevel = XtAppInitialize(&apc, "Kinput2",
-			       options, XtNumber(options),
-			       &ac, av,
-			       fallback_resources, (ArgList)NULL, 0);
-
-    /* check invalid argument */ 
-    if (ac > 1) {
-	int do_usage = 0;
-	for (i = 1; i < ac; i++) {
-	    if (!strcmp(av[i], "-version")) {
-		print_version();
-	    } else {
-		fprintf(stderr, "unknown argument: %s\n", av[i]);
-		do_usage = 1;
-	    }
-	}
-	if (do_usage) usage();
-    }
-
-    /* initialize asynchronous error handler */
-    XAEInit();
-
-    /* initialize I/O error callback handler */
-    XIOEInit();
-
-    XtGetApplicationResources(toplevel, &appres,
-			      app_resources, XtNumber(app_resources),
-			      NULL, 0);
-
-    /*
-     * If the application-specific class resource file
-     * (the "app-defaults" file) is not found,
-     * print a warning message.
-     */
-    if (!appres.appdefs_loaded) {
-	fprintf(stderr, "Warning: Cannot load app-defaults file.\n");
-	fprintf(stderr, "  Kinput2 may not work properly without it.\n");
-	fprintf(stderr, "  Maybe kinput2 is not installed correctly,\n");
-	fprintf(stderr, "  or your file search path (specified by\n");
-	fprintf(stderr, "  environment variable 'XFILESEARCHPATH')\n");
-	fprintf(stderr, "  is wrong.\n");
-    }
-
-    /* set debug level */
-    debug_all = appres.debugLevel;
-
-#ifdef RANDOM_ID
-    /*
-     * one nasty hack here:
-     *
-     * kinput clients often use server's window ID for the only key
-     * value to identify their conversion server (kinput), and they
-     * think it is dead and take appropriate action (eg connecting to
-     * the new server) when they notice the ID has changed.
-     *
-     * but it is likely that another kinput has the same resource ID
-     * base (because X servers always choose the smallest unused ID
-     * base for new clients). and if it is the same, so is the owner
-     * window ID, and the clients don't notice the change.
-     *
-     * to get rid of the problem, we add some small random offset to
-     * the resource ID so that every time we get different owner ID
-     * even if the resource ID base is the same.
-     *
-     * of course it heavily depends on the current implementaion of
-     * the resource ID allocation in Xlib, so I call it 'nasty'.
-     */
-    XtDisplay(toplevel)->resource_id += getpid() % 1024;
-#endif
-
-    inputobjclass = getInputObjClass();
-
-    inputobj = XtCreateWidget("inputObj", inputobjclass,
-				toplevel, 0, 0);
-    XtRealizeWidget(inputobj);
-    ICRegisterTriggerKeys(inputobj);
-    /*
-       Destroying the `inputobj' is postponed until all the widgets
-       are realized in order to prevent duplicate initialization of
-       input object, that is, to prevent making connection twice to
-       input conversion server.
-     */
-
-    displayobjclass = jpWcharDisplayObjectClass;
-
-    manager = XtVaCreateManagedWidget("convmanager",
-				      conversionManagerWidgetClass,
-				      toplevel,
-				      XtNwidth, 1,
-				      XtNheight, 1,
-				      NULL);
-
-    numProtocols = 0;
-
-    if (appres.useXimpProtocol) {
-        abort();
-/*
-	protocol = XtVaCreateWidget("ximpprotocol",
-				    ximpProtocolWidgetClass,
-				    manager,
-				    XtNlocaleName, "ja_JP",
-				    XtNinputObjectClass, inputobjclass,
-				    XtNdisplayObjectClass, displayobjclass,
-				    XtNwidth, 1,
-				    XtNheight, 1,
-				    NULL);
-	XtAddCallback(protocol, XtNdestroyCallback,
-		      Destroyed, (XtPointer)NULL);
-	numProtocols++;
-*/
-    }
-
-    if (appres.useXIMProtocol) {
-	protocol = XtVaCreateWidget("improtocol",
-				    imProtocolWidgetClass,
-				    manager,
-				    XtNlanguage, "ja_JP",
-				    XtNinputObjectClass, inputobjclass,
-				    XtNdisplayObjectClass, displayobjclass,
-				    XtNwidth, 1,
-				    XtNheight, 1,
-				    NULL);
-	XtAddCallback(protocol, XtNdestroyCallback,
-		      Destroyed, (XtPointer)NULL);
-	numProtocols++;
-    }
-
-    if (numProtocols == 0) {
-	fprintf(stderr, "no protocols activated\n");
-	exit(1);
-    }
-
-    /* set signal handler */
-    if (signal(SIGINT, SIG_IGN) != SIG_IGN) signal(SIGINT, scheduleExit);
-#if XtSpecificationRelease > 5
-    interrupt = XtAppAddSignal(apc, interruptCallback, (XtPointer)NULL);
-#endif
-    signal(SIGTERM, scheduleExit);
-
-    /* set my error handler */
-    DefaultErrorHandler = XAESetErrorHandler(IgnoreBadWindow);
-
-    XtRealizeWidget(toplevel);
-
-    XtDestroyWidget(inputobj); /* Don't move this before XtRealizeWidget() */
-
-    for (;;) {
-	XEvent event;
-
-	XtAppNextEvent(apc, &event);
-	XtDispatchEvent(&event);
-	MyDispatchEvent(&event); /* additional dispatcher */
-    }
-    /* NOTREACHED */
-
-    return 0;	/* for lint */
 }
 #endif
 
@@ -923,49 +651,6 @@ XErrorEvent *error;
     }
     return 0;
 }
-
-#if 0	// pthreadはずし
-#ifdef SIGNALRETURNSINT
-static int
-#else
-static void
-#endif
-scheduleExit()
-{
-#if XtSpecificationRelease > 5
-    XtNoticeSignal(interrupt);
-#else
-    /*
-     * It is unwise to do complex operation (in this case,
-     * XtDestroyWidget) in a signal handler.
-     * So postpone the real work...
-     */
-    XtAppAddTimeOut(apc, 1L, exitTimer, (XtPointer)NULL);
-#endif
-}
-#endif	// #if 0
-
-#if 0	// pthreadはずし
-#if XtSpecificationRelease > 5
-/* ARGSUSED */
-static void
-interruptCallback(cldata, sigid)
-XtPointer cldata;
-XtSignalId *sigid;
-{
-    Exit();
-}
-#else
-/* ARGSUSED */
-static void
-exitTimer(cldata, timerp)
-XtPointer cldata;
-XtIntervalId *timerp;
-{
-    Exit();
-}
-#endif
-#endif	// #if 0
 
 /* ARGSUSED */
 static void
@@ -1021,69 +706,3 @@ XtIntervalId *timerp;
     exit(0);
 #endif
 }
-
-#ifndef USE_WINIME
-static void
-usage()
-{
-    char **p;
-    static char *syntaxtable[] = {
-#ifdef USE_WINIME
-#endif
-	"-bc",			"backward compatible mode",
-	"-font <font>",		"ASCII font to be used",
-	"-kanjifont <font>",	"KANJI font to be used",
-	"-kanafont <font>",	"KANA font to be used",
-	"-/+kinput",		"activate/deactivate kinput protocol family",
-	"-/+ximp",		"activate/deactivate Ximp protocol",
-	"-/+xim",		"activate/deactivate X Input Method protocol",
-	"-tbheight <number>",	"specify pop-up shell's titlebar height",
-	"-background <color>",	"background color",
-	"-foreground <color>",	"foreground color",
-	"-rv",			"reverse video mode",
-	"-display <display>",	"specify display",
-	"-version",		"print version information and exit",
-#ifdef DEBUG
-	"-debug",		"print debug messages (debug level 1)",
-	"-trace",		"print trace messages (debug level 10)",
-	"-debuglevel <level>",	"set debug level",
-#endif
-	NULL, NULL,
-    };
-
-    fprintf(stderr, "options are:\n");
-    for (p = syntaxtable; *p != NULL; p += 2) {
-	fprintf(stderr, "    %-30s %s\n", *p, *(p + 1));
-    }
-    exit(1);
-}
-
-static void
-print_version()
-{
-    char *p;
-
-    printf("kinput2 %s ", KINPUT2_VERSION);
-    if (PATCHLEVEL > 0) printf("fix %d ", PATCHLEVEL);
-#ifdef STATUS
-    printf("-%s- ", STATUS);
-#endif
-    printf(" (");
-    p = DATE + 7;				/* skip '$Date: ' */
-    while (*p != '\0' && *p != ' ') {
-	putchar(*p);	/* print date */
-	p++;
-    }
-    printf(")\n");
-
-    printf("\toptions: ");
-#ifdef USE_WINIME
-    printf("[WinIMM32] ");
-#endif
-#ifdef DEBUG
-    printf("[DEBUG] ");
-#endif
-    printf("\n");
-    exit(0);
-}
-#endif	// #ifndef USE_WINIME
