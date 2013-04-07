@@ -13,8 +13,8 @@ WIDGETSRCS = AdoptedShe.c AuxPanel.c CandPanel.c Canvas.c \
             ICLabel.c InputConv.c KIProto.c OffConv.c \
             OverConv.c OnConv.c WcharDisp.c XimpProto.c IMProto.c
 
-UTILSRCS = cachedatom.c cachedfont.c ctext.c dispatch.c \
-            fontset.c wstring.c xtwstr.c xwstr.c \
+UTILSRCS = cachedatom.c cachedfont.c dispatch.c \
+            fontset.c xtwstr.c xwstr.c \
             asyncerr.c fontbank.c parsekey.c ioecall.c
 
 WINIMESRCS = WinIMM32.c

@@ -785,7 +785,6 @@ StatusString(Widget w, Atom *encoding, int *format, int *length, XtPointer *stri
     ICString *seg;
     wchar *wbuf, *wp;
     int len, wlen;
-    extern int convJWStoCT();
 
 TRACE(("    WinIMM32: StatusString\n"));	/*YA*/
     seg = GetMode(w);

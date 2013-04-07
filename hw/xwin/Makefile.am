@@ -92,7 +92,6 @@ SRCS_WINIME = \
 	kinput2-v3.1/lib/ConvCtrl.c \
 	kinput2-v3.1/lib/ConvDisp.c \
 	kinput2-v3.1/lib/ConvMgr.c \
-	kinput2-v3.1/lib/ctext.c \
 	kinput2-v3.1/lib/dispatch.c \
 	kinput2-v3.1/lib/fontbank.c \
 	kinput2-v3.1/lib/fontset.c \
@@ -115,7 +114,6 @@ SRCS_WINIME = \
 	kinput2-v3.1/lib/parsekey.c \
 	kinput2-v3.1/lib/WcharDisp.c \
 	kinput2-v3.1/lib/WinIMM32.c \
-	kinput2-v3.1/lib/wstring.c \
 	kinput2-v3.1/lib/xtwstr.c \
 	kinput2-v3.1/lib/xwstr.c
 DEFS_WINIME = -DXWIN_WINIME -DUSE_WINIME -DFOR_ACS

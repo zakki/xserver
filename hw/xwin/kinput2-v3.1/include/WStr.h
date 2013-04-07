@@ -40,7 +40,6 @@ typedef unsigned short	wchar;
 #define convWStoSJIS	convJWStoSJIS
 #define convSJIStoWS	convSJIStoJWS
 
-#if __STDC__ == 1
 extern int convJWStoLatin1(wchar *, unsigned char *);
 extern int convLatin1toJWS(unsigned char *, wchar *);
 extern int convJWStoJIS(wchar *, unsigned char *);
@@ -49,33 +48,5 @@ extern int convJWStoEUC(wchar *, unsigned char *);
 extern int convEUCtoJWS(unsigned char *, wchar *);
 extern int convJWStoSJIS(wchar *, unsigned char *);
 extern int convSJIStoJWS(unsigned char *, wchar *);
-extern wchar *wstrcat(wchar *, wchar *);
-extern wchar *wstrncat(wchar *, wchar *, int);
-extern int wstrcmp(wchar *, wchar *);
-extern int wstrncmp(wchar *, wchar *, int);
-extern wchar *wstrcpy(wchar *, wchar *);
-extern wchar *wstrncpy(wchar *, wchar *, int);
-extern int wstrlen(wchar *);
-extern wchar *windex(wchar *, wchar);
-extern wchar *wrindex(wchar *, wchar);
-#else
-extern int convJWStoLatin1();
-extern int convLatin1toJWS();
-extern int convJWStoJIS();
-extern int convJIStoJWS();
-extern int convJWStoEUC();
-extern int convEUCtoJWS();
-extern int convJWStoSJIS();
-extern int convSJIStoJWS();
-extern wchar *wstrcat();
-extern wchar *wstrncat();
-extern int wstrcmp();
-extern int wstrncmp();
-extern wchar *wstrcpy();
-extern wchar *wstrncpy();
-extern int wstrlen();
-extern wchar *windex();
-extern wchar *wrindex();
-#endif
 
 #endif

@@ -44,7 +44,6 @@ typedef unsigned short	wchar;
 #include <X11/extensions/winime.h>
 
 #include "imlib/im.h"
-extern int convJWStoCT();
 extern BOOL g_ignore_key;
 #endif
 
