@@ -26,7 +26,7 @@ extern int EXT_DEBUG_VAR;
 	{ if (DDEBUG_CONDITION(level)) printf args; }
 #ifdef USE_WINIME
 #define TRACE(args) \
-	winDebug args
+	winTrace args
 #else
 #define TRACE(args)	DDPRINT(10, args)
 #endif
@@ -37,12 +37,12 @@ extern int EXT_DEBUG_VAR;
 #define DDEBUG_CONDITION(l) 0
 //#define DPRINT(args)
 #define DPRINT(args) \
-	winDebug args
+	winTrace args
 //#define DDPRINT(level, args)
 #define DDPRINT(level, args) \
-	winDebug args
+	winTrace args
 //#define TRACE(args)
 #define TRACE(args) \
-	winDebug args
+	winTrace args
 
 #endif
